@@ -1,7 +1,8 @@
 <h1 align="center">
-# 🌤️ ESP32 Mini Weather Station - OLED Display with Animated Mochi Eyes & DHT22 Sensor 🌤️
+🌤️ ESP32 Mini Weather Station - OLED Display with Animated Mochi Eyes & DHT22 Sensor 🌤️<br>
     <sub>OLED Display with Animated Mochi Eyes & DHT22 Sensor</sub>
 </h1>
+
 <p align="center">
   <img src="/assets/mini_weather_station_banner.png?height=400&width=700" alt="ESP32 Mini Weather Station" width="700"/>
 </p>
