@@ -6,15 +6,15 @@
   <em>Stasiun cuaca mini berbasis ESP32-C3 dengan tampilan OLED 128x64, animasi mata mochi lucu, data cuaca real-time dari Open-Meteo API, sensor DHT22 untuk suhu ruangan, FreeRTOS tasks untuk scheduling, queue antar-task, monitoring memory, dan deep sleep untuk hemat daya.</em>
 </p>
 <p align="center">
-  <img src="https://img.shields.io/badge/last%20commit-today-brightgreen" />
-  <img src="https://img.shields.io/badge/language-C%2B%2B-blue" />
-  <img src="https://img.shields.io/badge/platform-ESP32-C3%20%7C%20OLED-informational" />
-  <img src="https://img.shields.io/badge/framework-Arduino-orange" />
-  <img src="https://img.shields.io/badge/rtos-FreeRTOS-green" />
-  <img src="https://img.shields.io/badge/sensor-DHT22%20%7C%20Touch-green" />
-  <img src="https://img.shields.io/badge/api-Open-Meteo-purple" />
+  <img src="https://img.shields.io/badge/last_commit-today-brightgreen?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/language-C++-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" />
+  <img src="https://img.shields.io/badge/platform-ESP32--C3_▸_OLED-00ADD8?style=for-the-badge&logo=espressif&logoColor=white" />
+  <img src="https://img.shields.io/badge/framework-Arduino-00979D?style=for-the-badge&logo=arduino&logoColor=white" />
+  <img src="https://img.shields.io/badge/RTOS-FreeRTOS-3C873A?style=for-the-badge&logo=freebsd&logoColor=white" />
+  <img src="https://img.shields.io/badge/sensors-DHT22_▸_Touch-32CD32?style=for-the-badge&logo=sensors&logoColor=white" />
+  <img src="https://img.shields.io/badge/API-Open--Meteo-7B68EE?style=for-the-badge&logo=weather&logoColor=white" />
   <a href="https://github.com/ficrammanifur/esp32-mini-weather-station/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT" />
+    <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License: MIT" />
   </a>
 </p>
 
