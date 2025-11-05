@@ -1,0 +1,883 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <WiFi.h>
+#include <WiFiManager.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <time.h>
+#include <DHT.h>
+#include "EyeAnimation.h"
+#include <esp_sleep.h>
+
+// ==== TOUCH CONFIG ====
+#define TOUCH_PIN 1  // GPIO 4 for TTP223
+#define INACTIVITY_TIMEOUT 600000UL  // 10 minutes
+#define DOUBLE_TAP_TIMEOUT 2000UL    // 2 seconds
+#define RELEASE_TIMEOUT 500UL        // Max time to wait for release
+
+// ==== OLED CONFIG ====
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_SDA 8
+#define OLED_SCL 9
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// ==== DHT CONFIG ====
+#define DHTPIN 2
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+// ==== API URL (Koordinat Tangerang) ====
+const char* weatherURL = "https://api.open-meteo.com/v1/forecast?latitude=-6.1783&longitude=106.6319&hourly=temperature_2m,weathercode,uv_index&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FJakarta";
+
+// ==== TASK TIMING ====
+unsigned long lastWeatherFetch = 0;
+unsigned long lastDisplayUpdate = 0;
+unsigned long lastSlideChange = 0;
+unsigned long lastDHTRead = 0;
+unsigned long lastTouchCheck = 0;
+const unsigned long weatherInterval = 900000; // 15 menit
+const unsigned long dhtInterval = 2000; // Baca DHT setiap 2 detik
+const unsigned long displayInterval = 50; // Update OLED
+const unsigned long slideInterval = 10000; // Ganti tampilan
+const unsigned long touchCheckInterval = 100; // Check touch setiap 100ms
+
+// ==== DATA VARIABEL ====
+String cuacaSekarang = "Loading...";
+String cuacaBesok = "Loading...";
+String suhu = "-";
+String uv = "-";
+float highTemp = 0;
+float lowTemp = 0;
+String roomTemp = "22"; // Default, akan diupdate dari DHT22
+
+// ==== SLIDES ====
+int currentSlide = 0;
+
+// ==== TIME ====
+struct tm timeinfo;
+const char* HARI[] = {"Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"};
+const char* BULAN[] = {"Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"};
+
+// ==== EYE ANIMATION INSTANCE ====
+EyeAnimation eyeAnim;
+
+// ==== SLEEP STATE ====
+RTC_DATA_ATTR static int validWakeCount = 0;
+static unsigned long lastActivity = 0;
+bool isAwake = false;
+
+// ==== FUNGSI KONVERSI CUACA ====
+String getWeatherDesc(int code) {
+  switch (code) {
+    case 0: return "Cerah";
+    case 1:
+    case 2: return "Berawan";
+    case 3: return "Mendung";
+    case 61:
+    case 63: return "Hujan";
+    case 95: return "Petir";
+    default: return "N/A";
+  }
+}
+
+// ==== ICON CUACA (SUN) ====
+static const unsigned char PROGMEM sun_icon[] = {
+  0x00,0x00,0x00,0x10,0x00,0x18,0x00,0x10,0x00,0x00,0x07,0xe0,0x1f,0xf8,0x3f,0xfc,
+  0x7f,0xfe,0x7f,0xfe,0xff,0xff,0xff,0xff,0x7f,0xfe,0x7f,0xfe,0x3f,0xfc,0x1f,0xf8,
+  0x07,0xe0,0x00,0x00,0x00,0x10,0x00,0x18,0x00,0x10,0x00,0x00
+};
+
+// ==== ICON HUJAN ====
+static const unsigned char PROGMEM rain_icon[] = {
+  0x00,0x00,0x00,0x00,0x0f,0xe0,0x3f,0xf8,0x7f,0xfc,0xff,0xfe,0xff,0xfe,0x7f,0xfc,
+  0x3f,0xf8,0x00,0x00,0x48,0x48,0x48,0x48,0x48,0x48,0x48,0x48,0x00,0x00,0x00,0x00
+};
+
+// ==== ICON BERAWAN ====
+static const unsigned char PROGMEM cloud_icon[] = {
+  0x00,0x00,0x00,0x00,0x03,0xc0,0x0f,0xf0,0x1f,0xf8,0x3f,0xfc,0x7f,0xfe,0xff,0xff,
+  0xff,0xff,0xff,0xff,0xff,0xff,0x7f,0xfe,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+};
+
+// ==== HALAMAN ANIMASI MATA (DENGAN MOCHI EYES) ====
+void drawEyeScreen() {
+  display.clearDisplay();
+  // Border
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+  // Update dan gambar animasi mata
+  eyeAnim.update();
+  eyeAnim.draw(display);
+  // Status di bawah
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  char statusStr[10];
+  strcpy(statusStr, (WiFi.status() == WL_CONNECTED) ? "Online" : "Offline");
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds(statusStr, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((SCREEN_WIDTH - w) / 2, 52);
+  display.print(statusStr);
+  display.display();
+}
+
+// ==== HALAMAN WAKTU ====
+void drawTimeScreen() {
+  display.clearDisplay();
+  if (!getLocalTime(&timeinfo)) return;
+  // Border
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+  // Jam besar
+  char timeStr[6];
+  strftime(timeStr, sizeof(timeStr), "%H:%M", &timeinfo);
+  display.setTextSize(3);
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds(timeStr, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((SCREEN_WIDTH - w) / 2, 15);
+  display.setTextColor(SSD1306_WHITE);
+  display.print(timeStr);
+  // Tanggal
+  char dateStr[32];
+  sprintf(dateStr, "%s, %d %s", HARI[timeinfo.tm_wday], timeinfo.tm_mday, BULAN[timeinfo.tm_mon]);
+  display.setTextSize(1);
+  display.getTextBounds(dateStr, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((SCREEN_WIDTH - w) / 2, 48);
+  display.print(dateStr);
+  display.display();
+}
+
+// ==== HALAMAN CUACA ====
+void drawWeatherScreen() {
+  display.clearDisplay();
+  // Border
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+  display.drawLine(0, 14, SCREEN_WIDTH, 14, SSD1306_WHITE);
+  display.drawLine(0, 46, SCREEN_WIDTH, 46, SSD1306_WHITE);
+  // Header
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(8, 4);
+  display.print("CUACA");
+  display.setCursor(SCREEN_WIDTH - 58, 4);
+  display.print("Tangerang");
+  // Icon cuaca (geser ke kiri sedikit)
+  if (cuacaSekarang.indexOf("Hujan") >= 0) {
+    display.drawBitmap(5, 20, rain_icon, 20, 20, SSD1306_WHITE);
+  } else if (cuacaSekarang.indexOf("Berawan") >= 0 || cuacaSekarang.indexOf("Mendung") >= 0) {
+    display.drawBitmap(5, 20, cloud_icon, 20, 20, SSD1306_WHITE);
+  } else {
+    display.drawBitmap(5, 20, sun_icon, 20, 20, SSD1306_WHITE);
+  }
+  // Suhu besar (geser ke kanan sedikit untuk beri space dengan icon)
+  display.setTextSize(3);
+  display.setCursor(35, 18);
+  display.print(suhu);
+  display.setTextSize(1);
+  display.setCursor(65, 18);
+  display.print(char(176)); // Simbol derajat
+  display.setTextSize(2);
+  display.setCursor(71, 20);
+  display.print("C");
+  // Kondisi & UV
+  display.setTextSize(1);
+  display.setCursor(38, 38);
+  display.print(cuacaSekarang);
+  display.setCursor(SCREEN_WIDTH - 32, 38);
+  display.print("UV:");
+  display.print(uv);
+  // Footer - Forecast besok (dengan space yang cukup)
+  display.setCursor(0, 52);
+  display.print("Besok: ");
+  display.print(cuacaBesok);
+  display.setCursor(70, 52);
+  display.print("H:");
+  display.print((int)highTemp);
+  display.print(" L:");
+  display.print((int)lowTemp);
+  display.display();
+}
+
+// ==== HALAMAN SUHU RUANGAN ====
+void drawRoomTempScreen() {
+  display.clearDisplay();
+  // Border
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+  // Title
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(8, 4);
+  display.print("SUHU RUANGAN");
+  // Thermometer icon on left (drawn with lines and circle)
+  int thermX = 10;
+  int thermY = 25;
+  int tubeWidth = 2;
+  int tubeHeight = 20;
+  int bulbRadius = 3;
+  int mercuryHeight = 10; // Approximate level for 22°C
+  // Tube
+  display.drawRect(thermX, thermY, tubeWidth, tubeHeight, SSD1306_WHITE);
+  // Mercury fill
+  display.fillRect(thermX, thermY + tubeHeight - mercuryHeight, tubeWidth, mercuryHeight, SSD1306_WHITE);
+  // Bulb
+  display.fillCircle(thermX + tubeWidth / 2, thermY + tubeHeight + bulbRadius, bulbRadius, SSD1306_WHITE);
+  // Big temperature number slightly to the right
+  display.setTextSize(3);
+  int16_t x1, y1;
+  uint16_t w, h;
+  String tempStr = roomTemp + char(176) + "C";
+  display.getTextBounds(tempStr.c_str(), 0, 0, &x1, &y1, &w, &h);
+  display.setCursor(45, 25);
+  display.print(tempStr);
+  display.display();
+}
+
+// ==== FETCH DATA OPEN-METEO ====
+void fetchData() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  HTTPClient http;
+  http.begin(weatherURL);
+  int httpResponseCode = http.GET();
+  if (httpResponseCode == 200) {
+    String payload = http.getString();
+    DynamicJsonDocument doc(4096); // Dikecilkan untuk hemat memori
+    DeserializationError error = deserializeJson(doc, payload);
+    if (error) {
+      Serial.println("JSON parse failed: " + String(error.c_str()));
+      return;
+    }
+    float temp = doc["hourly"]["temperature_2m"][0];
+    int uvIndex = doc["hourly"]["uv_index"][0];
+    int codeNow = doc["hourly"]["weathercode"][0];
+    int codeTomorrow = doc["daily"]["weathercode"][1];
+    cuacaSekarang = getWeatherDesc(codeNow);
+    cuacaBesok = getWeatherDesc(codeTomorrow);
+    suhu = String((int)round(temp));
+    uv = String(uvIndex);
+    highTemp = doc["daily"]["temperature_2m_max"][1];
+    lowTemp = doc["daily"]["temperature_2m_min"][1];
+  }
+  http.end();
+}
+
+// ==== DEEP SLEEP FUNCTION (ESP32-C3 Compatible) ====
+void goToSleep() {
+  Serial.println("Sleep Mode");
+  
+  // Clear display before sleep to save power
+  display.clearDisplay();
+  display.display();
+  
+  // Disable all wake sources first
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+  
+  // Configure GPIO wakeup for ESP32-C3
+  // Wake on LOW level (when touch sensor is pressed)
+  gpio_wakeup_enable((gpio_num_t)TOUCH_PIN, GPIO_INTR_LOW_LEVEL);
+  esp_sleep_enable_gpio_wakeup();
+  
+  Serial.println("Entering deep sleep...");
+  delay(100); // Allow serial to flush
+  
+  // Start deep sleep
+  esp_deep_sleep_start();
+}
+
+// ==== SETUP (Modified wake detection section) ====
+void setup() {
+  Serial.begin(115200);
+  delay(100); // Stabilize serial
+
+  // Handle wake up reason
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_GPIO) {
+    Serial.println("Waking by Touch");
+    pinMode(TOUCH_PIN, INPUT);
+    
+    // Wait for release of first touch
+    unsigned long releaseStart = millis();
+    while (digitalRead(TOUCH_PIN) == LOW && (millis() - releaseStart < RELEASE_TIMEOUT)) {
+      delay(10);
+    }
+    
+    if (digitalRead(TOUCH_PIN) == LOW) {
+      // Still pressed after timeout, treat as long press, sleep
+      Serial.println("Long press, back to sleep");
+      goToSleep();
+    }
+    
+    // Now wait for second touch within timeout
+    unsigned long secondStart = millis();
+    bool secondTouch = false;
+    while ((millis() - secondStart < DOUBLE_TAP_TIMEOUT)) {
+      if (digitalRead(TOUCH_PIN) == LOW) {
+        secondTouch = true;
+        // Optional: wait for release of second touch
+        unsigned long secondReleaseStart = millis();
+        while (digitalRead(TOUCH_PIN) == LOW && (millis() - secondReleaseStart < RELEASE_TIMEOUT)) {
+          delay(10);
+        }
+        break;
+      }
+      delay(10);
+    }
+    
+    if (secondTouch) {
+      Serial.println("Double Tap Detected");
+      validWakeCount++;
+      Serial.print("Valid wake count: ");
+      Serial.println(validWakeCount);
+      // Proceed to normal operation
+      isAwake = true;
+      lastActivity = millis();
+    } else {
+      Serial.println("Single touch, back to sleep");
+      goToSleep(); // Sleep immediately
+    }
+  } else {
+    // Normal boot or other wake
+    isAwake = true;
+    lastActivity = millis();
+    Serial.print("Normal boot. Valid wake count: ");
+    Serial.println(validWakeCount);
+  }
+
+  // Configure touch pin for runtime if awake
+  if (isAwake) {
+    pinMode(TOUCH_PIN, INPUT);
+  }
+
+  // Rest of setup continues as before...
+  // DHT Setup
+  dht.begin();
+
+  // WiFi Setup
+  WiFiManager wm;
+  Serial.println("Configuring WiFi...");
+  if (!wm.autoConnect("MiniWeather-Setup")) {
+    Serial.println("Gagal connect WiFi, reboot...");
+    delay(2000);
+    ESP.restart();
+  }
+
+  // OLED Setup
+  Wire.begin(OLED_SDA, OLED_SCL);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("OLED gagal diinisialisasi"));
+    for(;;);
+  }
+
+  // Welcome Screen
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(20, 28);
+  display.println("WiFi Connected!");
+  display.display();
+  delay(2000);
+
+  // Time & Weather Setup
+  configTime(7 * 3600, 0, "pool.ntp.org");
+  fetchData();
+
+  // Initialize eye animation (mochi style)
+  eyeAnim.begin();
+}
+
+// ==== LOOP ====
+void loop() {
+  if (!isAwake) return; // Safety, though shouldn't happen
+
+  unsigned long now = millis();
+
+  // Check inactivity and sleep
+  if (now - lastActivity > INACTIVITY_TIMEOUT) {
+    goToSleep();
+  }
+
+  // Touch detection to reset inactivity timer (assuming LOW on touch)
+  if (now - lastTouchCheck >= touchCheckInterval) {
+    lastTouchCheck = now;
+    if (digitalRead(TOUCH_PIN) == LOW) {
+      lastActivity = now;
+      Serial.println("Touch detected, resetting timer");
+    }
+  }
+
+  // Baca DHT22
+  if (now - lastDHTRead >= dhtInterval) {
+    lastDHTRead = now;
+    float t = dht.readTemperature();
+    if (!isnan(t)) {
+      roomTemp = String((int)round(t));
+    }
+  }
+
+  // Fetch weather data
+  if (now - lastWeatherFetch >= weatherInterval) {
+    lastWeatherFetch = now;
+    fetchData();
+  }
+
+  // Change slide
+  if (now - lastSlideChange >= slideInterv#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <WiFi.h>
+#include <WiFiManager.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <time.h>
+#include <DHT.h>
+#include "EyeAnimation.h"
+#include <esp_sleep.h>
+
+// ==== TOUCH CONFIG ====
+#define TOUCH_PIN 1  // GPIO 4 for TTP223
+#define INACTIVITY_TIMEOUT 600000UL  // 10 minutes
+#define DOUBLE_TAP_TIMEOUT 2000UL    // 2 seconds
+#define RELEASE_TIMEOUT 500UL        // Max time to wait for release
+
+// ==== OLED CONFIG ====
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_SDA 8
+#define OLED_SCL 9
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// ==== DHT CONFIG ====
+#define DHTPIN 2
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+// ==== API URL (Koordinat Tangerang) ====
+const char* weatherURL = "https://api.open-meteo.com/v1/forecast?latitude=-6.1783&longitude=106.6319&hourly=temperature_2m,weathercode,uv_index&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FJakarta";
+
+// ==== TASK TIMING ====
+unsigned long lastWeatherFetch = 0;
+unsigned long lastDisplayUpdate = 0;
+unsigned long lastSlideChange = 0;
+unsigned long lastDHTRead = 0;
+unsigned long lastTouchCheck = 0;
+const unsigned long weatherInterval = 900000; // 15 menit
+const unsigned long dhtInterval = 2000; // Baca DHT setiap 2 detik
+const unsigned long displayInterval = 50; // Update OLED
+const unsigned long slideInterval = 10000; // Ganti tampilan
+const unsigned long touchCheckInterval = 100; // Check touch setiap 100ms
+
+// ==== DATA VARIABEL ====
+String cuacaSekarang = "Loading...";
+String cuacaBesok = "Loading...";
+String suhu = "-";
+String uv = "-";
+float highTemp = 0;
+float lowTemp = 0;
+String roomTemp = "22"; // Default, akan diupdate dari DHT22
+
+// ==== SLIDES ====
+int currentSlide = 0;
+
+// ==== TIME ====
+struct tm timeinfo;
+const char* HARI[] = {"Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"};
+const char* BULAN[] = {"Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"};
+
+// ==== EYE ANIMATION INSTANCE ====
+EyeAnimation eyeAnim;
+
+// ==== SLEEP STATE ====
+RTC_DATA_ATTR static int validWakeCount = 0;
+static unsigned long lastActivity = 0;
+bool isAwake = false;
+
+// ==== FUNGSI KONVERSI CUACA ====
+String getWeatherDesc(int code) {
+  switch (code) {
+    case 0: return "Cerah";
+    case 1:
+    case 2: return "Berawan";
+    case 3: return "Mendung";
+    case 61:
+    case 63: return "Hujan";
+    case 95: return "Petir";
+    default: return "N/A";
+  }
+}
+
+// ==== ICON CUACA (SUN) ====
+static const unsigned char PROGMEM sun_icon[] = {
+  0x00,0x00,0x00,0x10,0x00,0x18,0x00,0x10,0x00,0x00,0x07,0xe0,0x1f,0xf8,0x3f,0xfc,
+  0x7f,0xfe,0x7f,0xfe,0xff,0xff,0xff,0xff,0x7f,0xfe,0x7f,0xfe,0x3f,0xfc,0x1f,0xf8,
+  0x07,0xe0,0x00,0x00,0x00,0x10,0x00,0x18,0x00,0x10,0x00,0x00
+};
+
+// ==== ICON HUJAN ====
+static const unsigned char PROGMEM rain_icon[] = {
+  0x00,0x00,0x00,0x00,0x0f,0xe0,0x3f,0xf8,0x7f,0xfc,0xff,0xfe,0xff,0xfe,0x7f,0xfc,
+  0x3f,0xf8,0x00,0x00,0x48,0x48,0x48,0x48,0x48,0x48,0x48,0x48,0x00,0x00,0x00,0x00
+};
+
+// ==== ICON BERAWAN ====
+static const unsigned char PROGMEM cloud_icon[] = {
+  0x00,0x00,0x00,0x00,0x03,0xc0,0x0f,0xf0,0x1f,0xf8,0x3f,0xfc,0x7f,0xfe,0xff,0xff,
+  0xff,0xff,0xff,0xff,0xff,0xff,0x7f,0xfe,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+};
+
+// ==== HALAMAN ANIMASI MATA (DENGAN MOCHI EYES) ====
+void drawEyeScreen() {
+  display.clearDisplay();
+  // Border
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+  // Update dan gambar animasi mata
+  eyeAnim.update();
+  eyeAnim.draw(display);
+  // Status di bawah
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  char statusStr[10];
+  strcpy(statusStr, (WiFi.status() == WL_CONNECTED) ? "Online" : "Offline");
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds(statusStr, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((SCREEN_WIDTH - w) / 2, 52);
+  display.print(statusStr);
+  display.display();
+}
+
+// ==== HALAMAN WAKTU ====
+void drawTimeScreen() {
+  display.clearDisplay();
+  if (!getLocalTime(&timeinfo)) return;
+  // Border
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+  // Jam besar
+  char timeStr[6];
+  strftime(timeStr, sizeof(timeStr), "%H:%M", &timeinfo);
+  display.setTextSize(3);
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds(timeStr, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((SCREEN_WIDTH - w) / 2, 15);
+  display.setTextColor(SSD1306_WHITE);
+  display.print(timeStr);
+  // Tanggal
+  char dateStr[32];
+  sprintf(dateStr, "%s, %d %s", HARI[timeinfo.tm_wday], timeinfo.tm_mday, BULAN[timeinfo.tm_mon]);
+  display.setTextSize(1);
+  display.getTextBounds(dateStr, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((SCREEN_WIDTH - w) / 2, 48);
+  display.print(dateStr);
+  display.display();
+}
+
+// ==== HALAMAN CUACA ====
+void drawWeatherScreen() {
+  display.clearDisplay();
+  // Border
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+  display.drawLine(0, 14, SCREEN_WIDTH, 14, SSD1306_WHITE);
+  display.drawLine(0, 46, SCREEN_WIDTH, 46, SSD1306_WHITE);
+  // Header
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(8, 4);
+  display.print("CUACA");
+  display.setCursor(SCREEN_WIDTH - 58, 4);
+  display.print("Tangerang");
+  // Icon cuaca (geser ke kiri sedikit)
+  if (cuacaSekarang.indexOf("Hujan") >= 0) {
+    display.drawBitmap(5, 20, rain_icon, 20, 20, SSD1306_WHITE);
+  } else if (cuacaSekarang.indexOf("Berawan") >= 0 || cuacaSekarang.indexOf("Mendung") >= 0) {
+    display.drawBitmap(5, 20, cloud_icon, 20, 20, SSD1306_WHITE);
+  } else {
+    display.drawBitmap(5, 20, sun_icon, 20, 20, SSD1306_WHITE);
+  }
+  // Suhu besar (geser ke kanan sedikit untuk beri space dengan icon)
+  display.setTextSize(3);
+  display.setCursor(35, 18);
+  display.print(suhu);
+  display.setTextSize(1);
+  display.setCursor(65, 18);
+  display.print(char(176)); // Simbol derajat
+  display.setTextSize(2);
+  display.setCursor(71, 20);
+  display.print("C");
+  // Kondisi & UV
+  display.setTextSize(1);
+  display.setCursor(38, 38);
+  display.print(cuacaSekarang);
+  display.setCursor(SCREEN_WIDTH - 32, 38);
+  display.print("UV:");
+  display.print(uv);
+  // Footer - Forecast besok (dengan space yang cukup)
+  display.setCursor(0, 52);
+  display.print("Besok: ");
+  display.print(cuacaBesok);
+  display.setCursor(70, 52);
+  display.print("H:");
+  display.print((int)highTemp);
+  display.print(" L:");
+  display.print((int)lowTemp);
+  display.display();
+}
+
+// ==== HALAMAN SUHU RUANGAN ====
+void drawRoomTempScreen() {
+  display.clearDisplay();
+  // Border
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+  // Title
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(8, 4);
+  display.print("SUHU RUANGAN");
+  // Thermometer icon on left (drawn with lines and circle)
+  int thermX = 10;
+  int thermY = 25;
+  int tubeWidth = 2;
+  int tubeHeight = 20;
+  int bulbRadius = 3;
+  int mercuryHeight = 10; // Approximate level for 22°C
+  // Tube
+  display.drawRect(thermX, thermY, tubeWidth, tubeHeight, SSD1306_WHITE);
+  // Mercury fill
+  display.fillRect(thermX, thermY + tubeHeight - mercuryHeight, tubeWidth, mercuryHeight, SSD1306_WHITE);
+  // Bulb
+  display.fillCircle(thermX + tubeWidth / 2, thermY + tubeHeight + bulbRadius, bulbRadius, SSD1306_WHITE);
+  // Big temperature number slightly to the right
+  display.setTextSize(3);
+  int16_t x1, y1;
+  uint16_t w, h;
+  String tempStr = roomTemp + char(176) + "C";
+  display.getTextBounds(tempStr.c_str(), 0, 0, &x1, &y1, &w, &h);
+  display.setCursor(45, 25);
+  display.print(tempStr);
+  display.display();
+}
+
+// ==== FETCH DATA OPEN-METEO ====
+void fetchData() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  HTTPClient http;
+  http.begin(weatherURL);
+  int httpResponseCode = http.GET();
+  if (httpResponseCode == 200) {
+    String payload = http.getString();
+    DynamicJsonDocument doc(4096); // Dikecilkan untuk hemat memori
+    DeserializationError error = deserializeJson(doc, payload);
+    if (error) {
+      Serial.println("JSON parse failed: " + String(error.c_str()));
+      return;
+    }
+    float temp = doc["hourly"]["temperature_2m"][0];
+    int uvIndex = doc["hourly"]["uv_index"][0];
+    int codeNow = doc["hourly"]["weathercode"][0];
+    int codeTomorrow = doc["daily"]["weathercode"][1];
+    cuacaSekarang = getWeatherDesc(codeNow);
+    cuacaBesok = getWeatherDesc(codeTomorrow);
+    suhu = String((int)round(temp));
+    uv = String(uvIndex);
+    highTemp = doc["daily"]["temperature_2m_max"][1];
+    lowTemp = doc["daily"]["temperature_2m_min"][1];
+  }
+  http.end();
+}
+
+// ==== DEEP SLEEP FUNCTION (ESP32-C3 Compatible) ====
+void goToSleep() {
+  Serial.println("Sleep Mode");
+  
+  // Clear display before sleep to save power
+  display.clearDisplay();
+  display.display();
+  
+  // Disable all wake sources first
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+  
+  // Configure GPIO wakeup for ESP32-C3
+  // Wake on LOW level (when touch sensor is pressed)
+  gpio_wakeup_enable((gpio_num_t)TOUCH_PIN, GPIO_INTR_LOW_LEVEL);
+  esp_sleep_enable_gpio_wakeup();
+  
+  Serial.println("Entering deep sleep...");
+  delay(100); // Allow serial to flush
+  
+  // Start deep sleep
+  esp_deep_sleep_start();
+}
+
+// ==== SETUP (Modified wake detection section) ====
+void setup() {
+  Serial.begin(115200);
+  delay(100); // Stabilize serial
+
+  // Handle wake up reason
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_GPIO) {
+    Serial.println("Waking by Touch");
+    pinMode(TOUCH_PIN, INPUT);
+    
+    // Wait for release of first touch
+    unsigned long releaseStart = millis();
+    while (digitalRead(TOUCH_PIN) == LOW && (millis() - releaseStart < RELEASE_TIMEOUT)) {
+      delay(10);
+    }
+    
+    if (digitalRead(TOUCH_PIN) == LOW) {
+      // Still pressed after timeout, treat as long press, sleep
+      Serial.println("Long press, back to sleep");
+      goToSleep();
+    }
+    
+    // Now wait for second touch within timeout
+    unsigned long secondStart = millis();
+    bool secondTouch = false;
+    while ((millis() - secondStart < DOUBLE_TAP_TIMEOUT)) {
+      if (digitalRead(TOUCH_PIN) == LOW) {
+        secondTouch = true;
+        // Optional: wait for release of second touch
+        unsigned long secondReleaseStart = millis();
+        while (digitalRead(TOUCH_PIN) == LOW && (millis() - secondReleaseStart < RELEASE_TIMEOUT)) {
+          delay(10);
+        }
+        break;
+      }
+      delay(10);
+    }
+    
+    if (secondTouch) {
+      Serial.println("Double Tap Detected");
+      validWakeCount++;
+      Serial.print("Valid wake count: ");
+      Serial.println(validWakeCount);
+      // Proceed to normal operation
+      isAwake = true;
+      lastActivity = millis();
+    } else {
+      Serial.println("Single touch, back to sleep");
+      goToSleep(); // Sleep immediately
+    }
+  } else {
+    // Normal boot or other wake
+    isAwake = true;
+    lastActivity = millis();
+    Serial.print("Normal boot. Valid wake count: ");
+    Serial.println(validWakeCount);
+  }
+
+  // Configure touch pin for runtime if awake
+  if (isAwake) {
+    pinMode(TOUCH_PIN, INPUT);
+  }
+
+  // Rest of setup continues as before...
+  // DHT Setup
+  dht.begin();
+
+  // WiFi Setup
+  WiFiManager wm;
+  Serial.println("Configuring WiFi...");
+  if (!wm.autoConnect("MiniWeather-Setup")) {
+    Serial.println("Gagal connect WiFi, reboot...");
+    delay(2000);
+    ESP.restart();
+  }
+
+  // OLED Setup
+  Wire.begin(OLED_SDA, OLED_SCL);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("OLED gagal diinisialisasi"));
+    for(;;);
+  }
+
+  // Welcome Screen
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(20, 28);
+  display.println("WiFi Connected!");
+  display.display();
+  delay(2000);
+
+  // Time & Weather Setup
+  configTime(7 * 3600, 0, "pool.ntp.org");
+  fetchData();
+
+  // Initialize eye animation (mochi style)
+  eyeAnim.begin();
+}
+
+// ==== LOOP ====
+void loop() {
+  if (!isAwake) return; // Safety, though shouldn't happen
+
+  unsigned long now = millis();
+
+  // Check inactivity and sleep
+  if (now - lastActivity > INACTIVITY_TIMEOUT) {
+    goToSleep();
+  }
+
+  // Touch detection to reset inactivity timer (assuming LOW on touch)
+  if (now - lastTouchCheck >= touchCheckInterval) {
+    lastTouchCheck = now;
+    if (digitalRead(TOUCH_PIN) == LOW) {
+      lastActivity = now;
+      Serial.println("Touch detected, resetting timer");
+    }
+  }
+
+  // Baca DHT22
+  if (now - lastDHTRead >= dhtInterval) {
+    lastDHTRead = now;
+    float t = dht.readTemperature();
+    if (!isnan(t)) {
+      roomTemp = String((int)round(t));
+    }
+  }
+
+  // Fetch weather data
+  if (now - lastWeatherFetch >= weatherInterval) {
+    lastWeatherFetch = now;
+    fetchData();
+  }
+
+  // Change slide
+  if (now - lastSlideChange >= slideInterval) {
+    lastSlideChange = now;
+    currentSlide = (currentSlide + 1) % 4;
+  }
+
+  // Update display
+  if (now - lastDisplayUpdate >= displayInterval) {
+    lastDisplayUpdate = now;
+    switch (currentSlide) {
+      case 0: drawEyeScreen(); break;
+      case 1: drawTimeScreen(); break;
+      case 2: drawWeatherScreen(); break;
+      case 3: drawRoomTempScreen(); break;
+    }
+  }
+
+  delay(10);
+}al) {
+    lastSlideChange = now;
+    currentSlide = (currentSlide + 1) % 4;
+  }
+
+  // Update display
+  if (now - lastDisplayUpdate >= displayInterval) {
+    lastDisplayUpdate = now;
+    switch (currentSlide) {
+      case 0: drawEyeScreen(); break;
+      case 1: drawTimeScreen(); break;
+      case 2: drawWeatherScreen(); break;
+      case 3: drawRoomTempScreen(); break;
+    }
+  }
+
+  delay(10);
+}
