@@ -1,21 +1,24 @@
-# 🕐 ESP32 Portable Digital Clock - OLED Display with Animated Mochi Eyes & Deep Sleep 🕐
+<h1 align="center">
+🕐 ESP32 Portable Digital Clock<br>
+    <sub>OLED Display with Animated Mochi Eyes & Deep Sleep </sub>
+</h1>
 
 <p align="center">
-  <img src="/assets/portable_clock_banner.png?height=400&width=700" alt="ESP32 Portable Digital Clock" width="700"/>
+  <img src="/assets/mini_weather_station_banner.png?height=400&width=700" alt="ESP32 Mini Weather Station" width="700"/>
 </p>
 <p align="center">
-  <em>Jam digital portable berbasis ESP32-C3 dengan tampilan OLED 128x64, animasi mata mochi lucu, sinkronisasi waktu NTP real-time, sensor touch untuk wake-up, monitoring battery, dan FreeRTOS untuk task scheduling efisien. Dirancang untuk penggunaan battery-friendly dengan deep sleep setelah 10 menit inaktivitas.</em>
+  <em>Stasiun cuaca mini berbasis ESP32-C3 dengan tampilan OLED 128x64, animasi mata mochi lucu, data cuaca real-time dari Open-Meteo API, sensor DHT22 untuk suhu ruangan, FreeRTOS tasks untuk scheduling, queue antar-task, monitoring memory, dan deep sleep untuk hemat daya.</em>
 </p>
 <p align="center">
-  <img src="https://img.shields.io/badge/last%20commit-November%2006,%202025-brightgreen" />
-  <img src="https://img.shields.io/badge/language-C%2B%2B-blue" />
-  <img src="https://img.shields.io/badge/platform-ESP32-C3%20%7C%20OLED-informational" />
-  <img src="https://img.shields.io/badge/framework-Arduino-orange" />
-  <img src="https://img.shields.io/badge/rtos-FreeRTOS-green" />
-  <img src="https://img.shields.io/badge/sensor-Touch%20%7C%20Battery-green" />
-  <img src="https://img.shields.io/badge/ntp-NTP%20Sync-purple" />
-  <a href="https://github.com/ficrammanifur/esp32-portable-digital-clock/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT" />
+  <img src="https://img.shields.io/badge/last_commit-today-brightgreen?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/language-C++-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" />
+  <img src="https://img.shields.io/badge/platform-ESP32--C3_▸_OLED-00ADD8?style=for-the-badge&logo=espressif&logoColor=white" />
+  <img src="https://img.shields.io/badge/framework-Arduino-00979D?style=for-the-badge&logo=arduino&logoColor=white" />
+  <img src="https://img.shields.io/badge/RTOS-FreeRTOS-3C873A?style=for-the-badge&logo=freebsd&logoColor=white" />
+  <img src="https://img.shields.io/badge/sensors-DHT22_▸_Touch-32CD32?style=for-the-badge&logo=sensors&logoColor=white" />
+  <img src="https://img.shields.io/badge/API-Open--Meteo-7B68EE?style=for-the-badge&logo=weather&logoColor=white" />
+  <a href="https://github.com/ficrammanifur/esp32-mini-weather-station/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License: MIT" />
   </a>
 </p>
 
