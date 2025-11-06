@@ -1,60 +1,59 @@
-# Wiring Guide for ESP32 Mini Weather Station
+# Panduan Pengkabelan untuk Stasiun Cuaca Mini ESP32
 
-## 📋 Overview
-This guide provides step-by-step wiring instructions for assembling the ESP32 Mini Weather Station. The setup is simple, using I2C for the OLED display and a single GPIO for the DHT22 sensor. Ensure all connections are secure to avoid loose wires or short circuits.
+## 📋 Gambaran Umum
+Panduan ini memberikan instruksi pengkabelan langkah demi langkah untuk merakit Stasiun Cuaca Mini ESP32. Pengaturan sederhana, menggunakan I2C untuk tampilan OLED dan satu GPIO untuk sensor DHT22. Pastikan semua koneksi aman untuk menghindari kabel longgar atau hubungan pendek.
 
-### Required Tools
-- Soldering iron (optional for breadboard prototyping)
-- Jumper wires (male-to-female for breadboard)
-- Breadboard or perfboard
-- Multimeter (for continuity testing)
-- ESP32 DevKit V1 or similar
+### Alat yang Diperlukan
+- Solder (opsional untuk prototipe breadboard)
+- Kabel jumper (male-to-female untuk breadboard)
+- Breadboard atau perfboard
+- Multimeter (untuk tes kontinuitas)
+- ESP32 DevKit V1 atau serupa
 
-### Safety Notes
-- **Power Supply:** Use 3.3V for sensors and display. Do not exceed 5V on ESP32 pins.
-- **ESD Protection:** Ground yourself to prevent static damage to components.
-- **Testing:** Power on without sensors first to verify ESP32 boots.
+### Catatan Keselamatan
+- **Sumber Daya:** Gunakan 3.3V untuk sensor dan tampilan. Jangan melebihi 5V pada pin ESP32.
+- **Perlindungan ESD:** Ground diri Anda untuk mencegah kerusakan statis pada komponen.
+- **Testing:** Nyalakan tanpa sensor dulu untuk verifikasi boot ESP32.
 
 ---
 
-## 🛠️ Pinout Reference
-### ESP32 DevKit V1 Pin Assignments
-| ESP32 Pin | Function | Connected To | Notes |
-|-----------|----------|--------------|-------|
-| GPIO 3 | DHT22 Data | DHT22 Data Pin | Single-wire protocol |
-| GPIO 8 | I2C SDA | OLED SDA | Pull-up resistor recommended (4.7kΩ) |
-| GPIO 9 | I2C SCL | OLED SCL | Pull-up resistor recommended (4.7kΩ) |
-| 3.3V | Power | OLED VCC, DHT22 VCC | Shared power rail |
-| GND | Ground | OLED GND, DHT22 GND | Common ground |
-| 5V (optional) | USB Power | ESP32 VIN | For powering via USB |
+## 🛠️ Referensi Pinout
+### Penugasan Pin ESP32 DevKit V1
+| Pin ESP32 | Fungsi | Terhubung Ke | Catatan |
+|-----------|--------|--------------|---------|
+| GPIO 3 | Data DHT22 | Pin Data DHT22 | Protokol single-wire |
+| GPIO 8 | I2C SDA | OLED SDA | Resistor pull-up direkomendasikan (4.7kΩ) |
+| GPIO 9 | I2C SCL | OLED SCL | Resistor pull-up direkomendasikan (4.7kΩ) |
+| 3.3V | Daya | VCC OLED, VCC DHT22 | Rail daya bersama |
+| GND | Ground | GND OLED, GND DHT22 | Ground umum |
 
-### Component Pinouts
+### Pinout Komponen
 #### SSD1306 OLED (I2C)
-- VCC → ESP32 3.3V
-- GND → ESP32 GND
-- SDA → ESP32 GPIO 8
-- SCL → ESP32 GPIO 9
+- VCC → Rail 3.3V ESP32
+- GND → Rail GND ESP32
+- SDA → GPIO 8 ESP32
+- SCL → GPIO 9 ESP32
 
-#### DHT22 Sensor
-- VCC → ESP32 3.3V
-- GND → ESP32 GND
-- Data → ESP32 GPIO 3
-- (NC) → Not Connected
+#### Sensor DHT22
+- VCC → Rail 3.3V ESP32
+- GND → Rail GND ESP32
+- Data → GPIO 3 ESP32
+- (NC) → Tidak Terhubung
 
 ---
 
-## 🔌 Step-by-Step Wiring Instructions
+## 🔌 Instruksi Pengkabelan Langkah demi Langkah
 
-### 1. Prepare the Breadboard
-- Place ESP32 on one side of the breadboard.
-- Use power rails for 3.3V and GND distribution.
+### 1. Siapkan Breadboard
+- Tempatkan ESP32 di satu sisi breadboard.
+- Gunakan rail daya untuk distribusi 3.3V dan GND.
 
-### 2. Wire the OLED Display
-1. Connect OLED VCC to ESP32 3.3V rail.
-2. Connect OLED GND to ESP32 GND rail.
-3. Connect OLED SDA to ESP32 GPIO 8 (use jumper wire).
-4. Connect OLED SCL to ESP32 GPIO 9 (use jumper wire).
-5. **Optional:** Add 4.7kΩ pull-up resistors between SDA/SCL and 3.3V for stable I2C.
+### 2. Kabelkan Tampilan OLED
+1. Hubungkan VCC OLED ke rail 3.3V ESP32.
+2. Hubungkan GND OLED ke rail GND ESP32.
+3. Hubungkan SDA OLED ke GPIO 8 ESP32 (gunakan kabel jumper).
+4. Hubungkan SCL OLED ke GPIO 9 ESP32 (gunakan kabel jumper).
+5. **Opsional:** Tambahkan resistor pull-up 4.7kΩ antara SDA/SCL dan 3.3V untuk I2C stabil.
 
 **Visual (ASCII Art):**
 ```
@@ -66,11 +65,11 @@ GPIO8 ──────── SDA
 GPIO9 ──────── SCL
 ```
 
-### 3. Wire the DHT22 Sensor
-1. Connect DHT22 VCC to ESP32 3.3V rail.
-2. Connect DHT22 GND to ESP32 GND rail.
-3. Connect DHT22 Data to ESP32 GPIO 3 (use jumper wire).
-4. **Optional:** Add a 10kΩ pull-up resistor between Data and VCC for reliability.
+### 3. Kabelkan Sensor DHT22
+1. Hubungkan VCC DHT22 ke rail 3.3V ESP32.
+2. Hubungkan GND DHT22 ke rail GND ESP32.
+3. Hubungkan Data DHT22 ke GPIO 3 ESP32 (gunakan kabel jumper).
+4. **Opsional:** Tambahkan resistor pull-up 10kΩ antara Data dan VCC untuk keandalan.
 
 **Visual (ASCII Art):**
 ```
@@ -81,41 +80,41 @@ GND   ──────── GND
 GPIO3 ──────── Data
 ```
 
-### 4. Power Connections
-- Connect ESP32 via USB for initial testing (provides 5V to VIN).
-- For standalone: Use external 5V supply to VIN and GND.
-- Verify with multimeter: 3.3V rail stable at ~3.3V.
+### 4. Koneksi Daya
+- Hubungkan ESP32 via USB untuk testing awal (memberikan 5V ke VIN).
+- Untuk standalone: Gunakan sumber eksternal 5V ke VIN dan GND.
+- Verifikasi dengan multimeter: Rail 3.3V stabil ~3.3V.
 
-### 5. Full Assembly Diagram
-(Refer to `/assets/Schematic-Weather-Station.png` for visual schematic.)
+### 5. Diagram Perakitan Lengkap
+(Lihat `/assets/Schematic-Weather-Station.png` untuk skematik visual.)
 
-**Breadboard Layout Suggestion:**
-- Left rail: ESP32
-- Center: OLED (top) + DHT22 (bottom)
-- Right rail: Power distribution
-
----
-
-## 🔍 Verification Steps
-1. **Continuity Test:** Use multimeter to check connections (beep on shorts).
-2. **Power Test:** Measure voltages: 3.3V rail = 3.3V, no shorts to GND.
-3. **Upload Test Code:** Use `test/oled_test.ino` – should display "Hello OLED".
-4. **DHT Test:** Use `test/dht_test.ino` – serial output shows temperature.
-5. **Full Test:** Upload main firmware; verify slides and sensor readings.
-
-### Common Issues & Fixes
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| OLED Blank | Loose I2C wires | Re-seat jumpers, check pull-ups |
-| DHT NaN | Timing violation | Add delay >2s between reads |
-| I2C Errors | Address conflict | Scan I2C (address 0x3C for OLED) |
-| Power Drop | Long wires | Shorten jumpers, add capacitors |
+**Saran Layout Breadboard:**
+- Rail kiri: ESP32
+- Tengah: OLED (atas) + DHT22 (bawah)
+- Rail kanan: Distribusi daya
 
 ---
 
-## 📝 References
-- [Adafruit SSD1306 Guide](https://learn.adafruit.com/monochrome-oled-breakouts/wiring-128x64-oleds)
-- [DHT22 with ESP32](https://randomnerdtutorials.com/esp32-dht11-dht22-temperature-humidity-sensor-arduino-ide/)
-- [ESP32 I2C Pins](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/i2c.html)
+## 🔍 Langkah Verifikasi
+1. **Tes Kontinuitas:** Gunakan multimeter untuk cek koneksi (beep pada hubungan pendek).
+2. **Tes Daya:** Ukur voltase: Rail 3.3V = 3.3V, tanpa hubungan pendek ke GND.
+3. **Upload Kode Tes:** Gunakan `test/oled_test.ino` – harus tampil "Hello OLED".
+4. **Tes DHT:** Gunakan `test/dht_test.ino` – output serial tampilkan suhu.
+5. **Tes Lengkap:** Upload firmware utama; verifikasi slide dan pembacaan sensor.
 
-*Last Updated: November 06, 2025*
+### Masalah Umum & Perbaikan
+| Masalah | Penyebab | Perbaikan |
+|---------|----------|-----------|
+| OLED Kosong | Kabel I2C longgar | Pasang ulang jumper, cek pull-up |
+| DHT NaN | Pelanggaran timing | Tambah delay >2 detik antar baca |
+| Error I2C | Konflik alamat | Scan I2C (alamat 0x3C untuk OLED) |
+| Penurunan Daya | Kabel panjang | Pendekkan jumper, tambah kapasitor |
+
+---
+
+## 📝 Referensi
+- [Panduan Adafruit SSD1306](https://learn.adafruit.com/monochrome-oled-breakouts/wiring-128x64-oleds)
+- [DHT22 dengan ESP32](https://randomnerdtutorials.com/esp32-dht11-dht22-temperature-humidity-sensor-arduino-ide/)
+- [Pin I2C ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/i2c.html)
+
+*Terakhir Diperbarui: 06 November 2025*
