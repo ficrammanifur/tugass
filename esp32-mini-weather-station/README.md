@@ -131,19 +131,24 @@ FreeRTOS Scheduler
 Queue: TimeData & BatteryData (size 5)
 ```
 
-<p align="center"> 
-<img src="/assets/slide-1.png" alt="OLED Slide 1 - Mochi Eyes Animation" width="700"/><br/> 
-<em>🟢 Slide 1: Animasi mata Mochi saat idle</em><br/><br/>
+<div align="center">
 
-<img src="/assets/slide-2.png" alt="OLED Slide 2 - Real-Time Clock" width="700"/><br/>
-<em>🕒 Slide 2: Jam, hari, dan tanggal hasil sinkronisasi NTP</em><br/><br/>
+  <img src="/assets/slide-1.png" alt="OLED Slide 1 - Mochi Eyes Animation" width="700"/><br/>
+  <em>🟢 Slide 1: Animasi mata Mochi saat idle</em>
+  <br/><br/><br/>
 
-<img src="/assets/slide-3.png" alt="OLED Slide 3 - Weather in Tangerang" width="700"/><br/>
-<em>🌤️ Slide 3: Cuaca real-time wilayah Tangerang (API OpenWeather)</em><br/><br/>
+  <img src="/assets/slide-2.png" alt="OLED Slide 2 - Real-Time Clock" width="700"/><br/>
+  <em>🕒 Slide 2: Jam, hari, dan tanggal hasil sinkronisasi NTP</em>
+  <br/><br/><br/>
 
-<img src="/assets/slide-4.png" alt="OLED Slide 4 - Room Temperature & Humidity" width="700"/><br/>
-<em>🌡️ Slide 4: Suhu dan kelembapan ruangan (sensor DHT22)</em><br/>
-</p>
+  <img src="/assets/slide-3.png" alt="OLED Slide 3 - Weather in Tangerang" width="700"/><br/>
+  <em>🌤️ Slide 3: Cuaca real-time wilayah Tangerang (API OpenWeather)</em>
+  <br/><br/><br/>
+
+  <img src="/assets/slide-4.png" alt="OLED Slide 4 - Room Temperature & Humidity" width="700"/><br/>
+  <em>🌡️ Slide 4: Suhu dan kelembapan ruangan (sensor DHT22)</em>
+
+</div>
     
 ---
 
