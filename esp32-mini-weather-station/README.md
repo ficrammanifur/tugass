@@ -117,13 +117,32 @@ Project ini dirancang sebagai jam digital portable yang kompak, battery-powered,
 #### Arsitektur Software
 ```
 FreeRTOS Scheduler
-├── DisplayTask (Priority 1, 8192 stack): OLED update, slides, animation
-├── TimeTask (Priority 2, 4096 stack): NTP sync → Queue
-├── BatteryTask (Priority 3, 2048 stack): ADC read → Queue
-└── MonitorTask (Priority 4, 2048 stack): Inactivity check, sleep, memory log
+├── DisplayTask  (Priority 1, Stack 8192)
+│   └── Mengatur update OLED: animasi Mochi, waktu, cuaca, suhu
+│
+├── TimeTask     (Priority 2, Stack 4096)
+│   └── Sinkronisasi waktu via NTP → kirim ke Queue (TimeData)
+│
+├── BatteryTask  (Priority 3, Stack 2048)
+│   └── Baca tegangan baterai via ADC → kirim ke Queue (BatteryData)
+│
+└── MonitorTask  (Priority 4, Stack 2048)
+    └── Pantau inaktivitas, log memori, dan aktifkan deep sleep
 Queue: TimeData & BatteryData (size 5)
 ```
+<p align="center"> <img src="/assets/slide-1.png" alt="OLED Slide 1 - Mochi Eyes Animation" width="700"/><br/> <em>🟢 Slide 1: Animasi mata Mochi saat idle</em><br/><br/>
 
+<img src="/assets/slide-2.png" alt="OLED Slide 2 - Real-Time Clock" width="700"/><br/>
+<em>🕒 Slide 2: Jam, hari, dan tanggal hasil sinkronisasi NTP</em><br/><br/>
+
+<img src="/assets/slide-3.png" alt="OLED Slide 3 - Weather in Tangerang" width="700"/><br/>
+<em>🌤️ Slide 3: Cuaca real-time wilayah Tangerang (API OpenWeather)</em><br/><br/>
+
+<img src="/assets/slide-4.png" alt="OLED Slide 4 - Room Temperature & Humidity" width="700"/><br/>
+<em>🌡️ Slide 4: Suhu dan kelembapan ruangan (sensor DHT22)</em><br/>
+
+</p>
+    
 ---
 
 ## 💻 Penjelasan Program
