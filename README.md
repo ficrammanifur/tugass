@@ -803,8 +803,10 @@ SOFTWARE.
 ---
 
 <div align="center">
+    
 **Compact IoT Weather Monitoring with FreeRTOS, Queues, & Deep Sleep**  
 **Powered by ESP32-C3, Arduino, and Open Source**  
 **Star this repo if you find it helpful!**  
+
 <p><a href="#top">⬆ Back on Top</a></p>
 </div>
