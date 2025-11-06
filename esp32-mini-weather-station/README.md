@@ -686,11 +686,13 @@ esp32-portable-digital-clock/
 
 ---
 
-## 🤝 Kontribusi
-Fork → Branch → Commit → PR. Ide: Tambah alarm task, BLE sync.
+### 🤝 Kontribusi
+
+**Fork → Branch → Commit → PR. Ide: Tambah alarm task, BLE sync.**
+
 ---
 
-## 👨‍💻 Pengembang
+### 👨‍💻 Pengembang
 **Ficram Manifur Farissa**
 GitHub: [@ficrammanifur](https://github.com/ficrammanifur)
 Email: ficramm@gmail.com
@@ -698,7 +700,7 @@ Acknowledgments: Adafruit, Espressif, xAI Grok.
 
 ---
 
-## 📄 Lisensi
+### 📄 Lisensi
 MIT License (c) 2025 Ficram Manifur Farissa. Lihat [LICENSE](LICENSE).
 
 <div align="center">
