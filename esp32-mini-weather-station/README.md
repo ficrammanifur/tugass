@@ -524,7 +524,9 @@ Acknowledgments: Adafruit, Espressif, xAI Grok.
 MIT License (c) 2025 Ficram Manifur Farissa. Lihat [LICENSE](LICENSE).  
 
 <div align="center">
+    
 **Portable Digital Clock with FreeRTOS & Cute Animations**  
-**Star if helpful!**  
+**Star if helpful!** 
+
 <p><a href="#top">⬆ Top</a></p>
 </div>
