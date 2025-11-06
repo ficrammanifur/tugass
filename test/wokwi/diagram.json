@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "author": "Uri Shaked",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-xiao-esp32-s3", "id": "esp", "top": 38.97, "left": 13.78, "attrs": {} },
+    { "type": "wokwi-junction", "id": "j1", "top": 62.4, "left": 148.8, "attrs": {} },
+    {
+      "type": "board-ssd1306",
+      "id": "oled1",
+      "top": 60.74,
+      "left": 115.43,
+      "attrs": { "i2cAddress": "0x3c" }
+    },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -114.9, "left": 100.2, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:GND", "j1:J", "black", [ "h19.82", "v-48", "h76.8" ] ],
+    [ "oled1:SCL", "esp:D5", "green", [ "v-28.8", "h57.9", "v115.2", "h-230.4", "v-48" ] ],
+    [ "oled1:SDA", "esp:D4", "orange", [ "v-38.4", "h57.67", "v134.4", "h-249.6", "v-67.2" ] ],
+    [ "dht1:NC", "esp:D6", "green", [ "v38.4", "h-28.7", "v105.6", "h-96", "v-28.8" ] ],
+    [ "dht1:VCC", "esp:5V", "red", [ "v28.8", "h-28.8", "v28.8" ] ],
+    [ "dht1:GND", "esp:GND", "black", [ "v19.2", "h-48", "v48" ] ],
+    [ "oled1:VCC", "esp:5V", "red", [ "v-38.4", "h-76.65", "v28.8" ] ]
+  ],
+  "dependencies": {}
+}
