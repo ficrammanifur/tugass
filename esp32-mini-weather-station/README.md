@@ -68,7 +68,7 @@ Project ini dirancang sebagai jam digital portable yang kompak, battery-powered,
           │ 3.3V Regulated
           ▼
 ┌─────────────────────┐    ┌─────────────────────┐
-│ ESP32-C3 DevKit     │───│ SSD1306 OLED        │
+│ ESP32-C3 DevKit     │─── │ SSD1306 OLED        │
 │ - GPIO 8: SDA       │ I2C│ - Display Slides    │
 │ - GPIO 9: SCL       │    │ - Low Power Off     │
 │ - GPIO 1: Touch     │    └─────────────────────┘
@@ -130,7 +130,10 @@ FreeRTOS Scheduler
     └── Pantau inaktivitas, log memori, dan aktifkan deep sleep
 Queue: TimeData & BatteryData (size 5)
 ```
-<p align="center"> <img src="/assets/slide-1.png" alt="OLED Slide 1 - Mochi Eyes Animation" width="700"/><br/> <em>🟢 Slide 1: Animasi mata Mochi saat idle</em><br/><br/>
+
+<p align="center"> 
+<img src="/assets/slide-1.png" alt="OLED Slide 1 - Mochi Eyes Animation" width="700"/><br/> 
+<em>🟢 Slide 1: Animasi mata Mochi saat idle</em><br/><br/>
 
 <img src="/assets/slide-2.png" alt="OLED Slide 2 - Real-Time Clock" width="700"/><br/>
 <em>🕒 Slide 2: Jam, hari, dan tanggal hasil sinkronisasi NTP</em><br/><br/>
@@ -140,7 +143,6 @@ Queue: TimeData & BatteryData (size 5)
 
 <img src="/assets/slide-4.png" alt="OLED Slide 4 - Room Temperature & Humidity" width="700"/><br/>
 <em>🌡️ Slide 4: Suhu dan kelembapan ruangan (sensor DHT22)</em><br/>
-
 </p>
     
 ---
