@@ -30,8 +30,10 @@
   - [Desain Software](#-desain-software)
 - [Penjelasan Program](#-penjelasan-program)
   - [Arsitektur FreeRTOS](#-arsitektur-freertos)
+  - [🏗️ Arsitektur Sistem](#-arsitektur-sistem)
   - [Kode Program Lengkap](#-kode-program-lengkap)
   - [Alur Kerja Tasks](#-alur-kerja-tasks)
+  - [🔄 Alur Kerja Sistem](#-alur-kerja-sistem)
 - [Instalasi](#-instalasi)
 - [Cara Menjalankan](#-cara-menjalankan)
 - [Testing](#-testing)
@@ -69,8 +71,8 @@ Project ini dirancang sebagai jam digital portable yang kompak, battery-powered,
           ▼
 ┌─────────────────────┐    ┌─────────────────────┐
 │ ESP32-C3 DevKit     │─── │ SSD1306 OLED        │
-│ - GPIO 8: SDA       │ I2C│ - Display Slides    │
-│ - GPIO 9: SCL       │    │ - Low Power Off     │
+│ - GPIO 8: SDA │ I2C │    │  - Display Slides   │ 
+│ - GPIO 9: SCL │     │    │  - Low Power Off    │
 │ - GPIO 1: Touch     │    └─────────────────────┘
 │ - GPIO 0: ADC Batt  │
 │ - Deep Sleep Wake   │
@@ -88,75 +90,70 @@ Project ini dirancang sebagai jam digital portable yang kompak, battery-powered,
   <img src="/assets/portable_clock_wiring.png?height=400&width=700" alt="ESP32 Portable Clock Wiring Diagram" width="700"/><br/>
   <em>Diagram Pengkabelan Lengkap</em><br/>
   ⚙️ <strong>Notes:</strong><br/>
-  🔹 Battery: + ke TP4056 IN+, - ke GND; OUT+ ke VIN ESP32-C3 (atau 3.3V reg).  
-  🔹 ADC Battery: GPIO 0 (analogRead) dengan divider untuk aman <3.3V.  
-  🔹 Touch: OUT TTP223 ke GPIO 1 (low-level trigger).  
-  🔹 Charging: USB Micro-B via TP4056 untuk portable.  
-  🔹 Total Power: Active ~50mA, Sleep <1mA.  
+  🔹 Battery: + ke TP4056 IN+, - ke GND; OUT+ ke VIN ESP32-C3 (atau 3.3V reg).
+  🔹 ADC Battery: GPIO 0 (analogRead) dengan divider untuk aman <3.3V.
+  🔹 Touch: OUT TTP223 ke GPIO 1 (low-level trigger).
+  🔹 Charging: USB Micro-B via TP4056 untuk portable.
+  🔹 Total Power: Active ~50mA, Sleep <1mA.
 </p>
 
 #### Desain Casing (3D Printable)
-- **Ukuran**: 50x50x15mm (compact untuk saku/meja).  
-- **Fitur**: Lubang OLED transparan, touch pad exposed, USB port akses, slot battery internal.  
-- **File STL**: Tersedia di `/assets/case.stl` (desain via Tinkercad).  
+- **Ukuran**: 50x50x15mm (compact untuk saku/meja).
+- **Fitur**: Lubang OLED transparan, touch pad exposed, USB port akses, slot battery internal.
+- **File STL**: Tersedia di `/assets/case.stl` (desain via Tinkercad).
 - **Biaya Estimasi**: ~Rp 150.000 (ESP32-C3 Rp50k, OLED Rp30k, Battery Rp40k, Lainnya Rp30k).
 
 ### Desain Software
-- **Framework**: Arduino IDE + FreeRTOS (built-in ESP32).  
-- **Fitur Utama**:  
-  - **NTP Sync**: Sinkronisasi waktu Asia/Jakarta setiap 1 jam.  
-  - **Display Slides**: 4 layar (Eyes animasi, Jam besar, Tanggal, Battery level).  
-  - **Animasi Mochi Eyes**: Blink random + offset gerak.  
-  - **Deep Sleep**: Auto setelah 10 menit; wake via double-tap touch.  
-  - **Battery Monitor**: ADC read, tampil % & voltage di slide.  
-  - **FreeRTOS**: Tasks terpisah untuk non-blocking operation.  
-- **Memory Management**: ESP.getFreeHeap() & uxTaskGetStackHighWaterMark() di MonitorTask.  
-- **Queue**: xQueue untuk share time/battery data antar tasks.  
-- **Fallback**: Jika NTP gagal, gunakan RTC internal (RTC_DATA_ATTR).  
+- **Framework**: Arduino IDE + FreeRTOS (built-in ESP32).
+- **Fitur Utama**:
+  - **NTP Sync**: Sinkronisasi waktu Asia/Jakarta setiap 1 jam.
+  - **Display Slides**: 4 layar (Eyes animasi, Jam besar, Tanggal, Battery level).
+  - **Animasi Mochi Eyes**: Blink random + offset gerak.
+  - **Deep Sleep**: Auto setelah 10 menit; wake via double-tap touch.
+  - **Battery Monitor**: ADC read, tampil % & voltage di slide.
+  - **FreeRTOS**: Tasks terpisah untuk non-blocking operation.
+- **Memory Management**: ESP.getFreeHeap() & uxTaskGetStackHighWaterMark() di MonitorTask.
+- **Queue**: xQueue untuk share time/battery data antar tasks.
+- **Fallback**: Jika NTP gagal, gunakan RTC internal (RTC_DATA_ATTR).
 
+      
 #### Arsitektur Software
 ```
 FreeRTOS Scheduler
-├── DisplayTask  (Priority 1, Stack 8192)
-│   └── Mengatur update OLED: animasi Mochi, waktu, cuaca, suhu
+├── DisplayTask (Priority 1, Stack 8192)
+│ └── Mengatur update OLED: animasi Mochi, waktu, cuaca, suhu
 │
-├── TimeTask     (Priority 2, Stack 4096)
-│   └── Sinkronisasi waktu via NTP → kirim ke Queue (TimeData)
+├── TimeTask (Priority 2, Stack 4096)
+│ └── Sinkronisasi waktu via NTP → kirim ke Queue (TimeData)
 │
-├── BatteryTask  (Priority 3, Stack 2048)
-│   └── Baca tegangan baterai via ADC → kirim ke Queue (BatteryData)
+├── BatteryTask (Priority 3, Stack 2048)
+│ └── Baca tegangan baterai via ADC → kirim ke Queue (BatteryData)
 │
-└── MonitorTask  (Priority 4, Stack 2048)
+└── MonitorTask (Priority 4, Stack 2048)
     └── Pantau inaktivitas, log memori, dan aktifkan deep sleep
 Queue: TimeData & BatteryData (size 5)
 ```
 
 <div align="center">
-
   <img src="/assets/slide-1.png" alt="OLED Slide 1 - Mochi Eyes Animation" width="700"/><br/>
   <em>🟢 Slide 1: Animasi mata Mochi saat idle</em>
   <br/><br/><br/>
-
   <img src="/assets/slide-2.png" alt="OLED Slide 2 - Real-Time Clock" width="700"/><br/>
   <em>🕒 Slide 2: Jam, hari, dan tanggal hasil sinkronisasi NTP</em>
   <br/><br/><br/>
-
   <img src="/assets/slide-3.png" alt="OLED Slide 3 - Weather in Tangerang" width="700"/><br/>
   <em>🌤️ Slide 3: Cuaca real-time wilayah Tangerang (API OpenWeather)</em>
   <br/><br/><br/>
-
   <img src="/assets/slide-4.png" alt="OLED Slide 4 - Room Temperature & Humidity" width="700"/><br/>
   <em>🌡️ Slide 4: Suhu dan kelembapan ruangan (sensor DHT22)</em>
-
 </div>
-    
+  
 ---
 
 ## 💻 Penjelasan Program
 
 ### Arsitektur FreeRTOS
 Program menggunakan FreeRTOS untuk multitasking efisien, menghindari blocking delays di loop utama. Setiap task punya prioritas, stack size, dan vTaskDelay untuk scheduling.
-
 - **Queue**: `xQueueCreate(5, sizeof(TimeData))` untuk share struct {int hour, min, day; ...} dari TimeTask ke DisplayTask. Serupa untuk BatteryData {float voltage; int percent;}.
 - **Tasks**:
   - **DisplayTask**: Core UI, dequeue data, update OLED setiap 50ms. Handle slide cycle & eye animation.
@@ -167,9 +164,141 @@ Program menggunakan FreeRTOS untuk multitasking efisien, menghindari blocking de
 - **Memory**: MonitorTask print "Free Heap: X | Stack WM: Y" setiap 10s via Serial.
 - **Portability**: RTC_DATA_ATTR untuk persist time/battery kalibrasi saat sleep/reboot.
 
+### 🏗️ Arsitektur Sistem
+
+#### Diagram Blok Sistem
+```
+              ┌───────────────────────┐
+              │ Open-Meteo API        │
+              │ (Weather Data)        │
+              └──────────┬────────────┘
+                         │ HTTPS (JSON)
+                         ▼
+            ┌──────────────────────────────┐
+            │ ESP32-C3 Core (FreeRTOS)     │
+            │──────────────────────────────│
+            │ - DisplayTask (OLED)         │
+            │ - SensorTask (DHT22)         │
+            │ - WeatherTask (API)          │
+            │ - MonitorTask (Memory/Sleep) │
+            │ - Queue: Data Sharing        │
+            └──────────┬───────────────────┘
+                       │ I2C (OLED)
+                       ▼
+           ┌────────────────────────────┐
+           │ SSD1306 OLED Display       │
+           │────────────────────────────│
+           │ 4 Slides: Eyes / Time /    │
+           │ Weather / Room Temp        │
+           └────────────────────────────┘
+                       │ GPIO 2
+                       ▼
+              ┌───────────────────────┐
+              │ DHT22 Sensor          │
+              │ (Room Temp)           │
+              └───────────────────────┘
+                       │ GPIO 1
+                       ▼
+              ┌───────────────────────┐
+              │ TTP223 Touch Sensor   │
+              │ (Deep Sleep Wake)     │
+              └───────────────────────┘
+```
+
+#### Diagram Alur Data
+```
+┌───────────────────────────────────────┐
+│ WiFiManager (Setup)                   │
+│ - Captive portal for SSID/Password    │
+└────────────────────┬──────────────────┘
+                     │ WiFi Connect
+                     ▼
+┌───────────────────────────────────────┐
+│ FreeRTOS Tasks (xTaskCreate)          │
+│ ┌───────────────────────────────────┐ │
+│ │ WeatherTask (15min)               │ │
+│ │ - Fetch JSON → Queue              │ │
+│ │ - Fallback: Cached data           │ │
+│ └───────────────────────────────────┘ │
+│ ▼                                     │
+│ ┌───────────────────────────────────┐ │
+│ │ SensorTask (2sec)                 │ │
+│ │ - DHT22 read → Queue              │ │
+│ │ - Touch detect → Reset timer      │ │
+│ └───────────────────────────────────┘ │
+│ ▼                                     │
+│ ┌───────────────────────────────────┐ │
+│ │ DisplayTask (50ms)                │ │
+│ │ - Dequeue data                    │ │
+│ │ - Animate & draw slides           │ │
+└─────────────────────────────────────┘ │
+│ ▼                                     │
+│ ┌───────────────────────────────────┐ │
+│ │ MonitorTask (1sec)                │ │
+│ │ - ESP.getFreeHeap()               │ │
+│ │ - uxTaskGetStackHighWaterMark()   │ │
+│ │ - Inactivity >10min → Deep Sleep  │ │
+└─────────────────────────────────────┘ │
+└───────────────────────────────────────┘
+                     │ I2C
+                     ▼
+┌───────────────────────────────────────┐
+│ OLED Display (128x64)                 │
+│ - Slide 0: Mochi Eyes + Memory        │
+│ - Slide 1: Time & Date                │
+│ - Slide 2: Weather + Forecast         │
+│ - Slide 3: Room Temp Thermometer      │
+└───────────────────────────────────────┘
+```
+
+#### Flowchart Sistem
+```mermaid
+flowchart TD
+    START([START])
+    INIT_FREERTOS["xTaskCreate Tasks<br/>(Display/Sensor/Weather/Monitor)"]
+    INIT_QUEUE["xQueueCreate<br/>(WeatherData Queue)"]
+    INIT_WIFI["Initialize WiFiManager<br/>(Auto-Connect)"]
+    INIT_OLED["Initialize OLED I2C<br/>(SDA=8, SCL=9)"]
+    INIT_DHT["Initialize DHT22<br/>(GPIO 2)"]
+    INIT_TOUCH["Initialize Touch<br/>(GPIO 1 for Sleep Wake)"]
+    INIT_TIME["NTP Sync<br/>(Asia/Jakarta)"]
+    TASK_LOOP{"FreeRTOS Task Loop"}
+    WEATHER_FETCH["WeatherTask:<br/>Fetch API → Queue<br/>(Fallback if Offline)"]
+    SENSOR_READ["SensorTask:<br/>DHT22 Read → Queue<br/>(Touch Reset Timer)"]
+    DISPLAY_UPDATE["DisplayTask:<br/>Dequeue → Animate/Draw"]
+    MEMORY_MONITOR["MonitorTask:<br/>Log Heap/Stack<br/>(Deep Sleep Check)"]
+    DEEP_SLEEP["Deep Sleep<br/>(GPIO Wake-up)"]
+    WAKE_DOUBLE_TAP["Wake-up:<br/>Double-Tap Validate"]
+    LOOP_BACK["vTaskDelay → Loop"]
+    END([END])
+    START --> INIT_FREERTOS
+    INIT_FREERTOS --> INIT_QUEUE
+    INIT_QUEUE --> INIT_WIFI
+    INIT_WIFI --> INIT_OLED
+    INIT_OLED --> INIT_DHT
+    INIT_DHT --> INIT_TOUCH
+    INIT_TOUCH --> INIT_TIME
+    INIT_TIME --> TASK_LOOP
+    TASK_LOOP --> WEATHER_FETCH
+    WEATHER_FETCH --> SENSOR_READ
+    SENSOR_READ --> DISPLAY_UPDATE
+    DISPLAY_UPDATE --> MEMORY_MONITOR
+    MEMORY_MONITOR --> DEEP_SLEEP
+    DEEP_SLEEP --> WAKE_DOUBLE_TAP
+    WAKE_DOUBLE_TAP --> TASK_LOOP
+    TASK_LOOP -.->|End Condition| END
+    classDef startEnd fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#000
+    classDef init fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef task fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef sleep fill:#fff8e1,stroke:#f57c00,stroke-width:2px,color:#000
+    class START,END startEnd
+    class INIT_FREERTOS,INIT_QUEUE,INIT_WIFI,INIT_OLED,INIT_DHT,INIT_TOUCH,INIT_TIME init
+    class WEATHER_FETCH,SENSOR_READ,DISPLAY_UPDATE,MEMORY_MONITOR task
+    class DEEP_SLEEP,WAKE_DOUBLE_TAP sleep
+```
+
 ### Kode Program Lengkap
 Berikut kode lengkap `main.ino` (adaptasi dari weather station, hapus weather, tambah battery & time focus). Compile di Arduino IDE dengan ESP32 board package 3.0+.
-
 ```cpp
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -182,31 +311,27 @@ Berikut kode lengkap `main.ino` (adaptasi dari weather station, hapus weather, t
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
-
 // ==== CONFIG ====
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_SDA 8
 #define OLED_SCL 9
-#define TOUCH_PIN 1  // TTP223
-#define BATTERY_PIN 0  // ADC untuk battery
-#define INACTIVITY_TIMEOUT 600000UL  // 10 min
+#define TOUCH_PIN 1 // TTP223
+#define BATTERY_PIN 0 // ADC untuk battery
+#define INACTIVITY_TIMEOUT 600000UL // 10 min
 #define DOUBLE_TAP_TIMEOUT 2000UL
 #define RELEASE_TIMEOUT 500UL
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
 // ==== QUEUE STRUCTS ====
 typedef struct {
   int hour, min, sec;
   int day, month, year;
   int wday;
 } TimeData;
-
 typedef struct {
   float voltage;
   int percent;
 } BatteryData;
-
 // ==== QUEUES & HANDLES ====
 QueueHandle_t timeQueue;
 QueueHandle_t batteryQueue;
@@ -214,7 +339,6 @@ TaskHandle_t displayTaskHandle;
 TaskHandle_t timeTaskHandle;
 TaskHandle_t batteryTaskHandle;
 TaskHandle_t monitorTaskHandle;
-
 // ==== GLOBAL DATA ====
 EyeAnimation eyeAnim;
 TimeData currentTime = {0};
@@ -223,14 +347,11 @@ int currentSlide = 0;
 bool isAwake = false;
 RTC_DATA_ATTR static unsigned long lastActivity = 0;
 RTC_DATA_ATTR static int wakeCount = 0;
-
 // ==== TIME ARRAYS ====
 const char* HARI[] = {"Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"};
 const char* BULAN[] = {"Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"};
-
 // ==== ICONS (Sama seperti sebelumnya, singkatkan) ====
 static const unsigned char PROGMEM battery_icon[] = { /* Bitmap battery sederhana */ 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 /* ... */ }; // Placeholder
-
 // ==== DISPLAY FUNCTIONS (Adaptasi, fokus time/battery) ====
 void drawEyeScreen() {
   display.clearDisplay();
@@ -246,7 +367,6 @@ void drawEyeScreen() {
   display.print("WM: "); display.print(uxTaskGetStackHighWaterMark(displayTaskHandle));
   display.display();
 }
-
 void drawTimeScreen() {
   display.clearDisplay();
   display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
@@ -260,7 +380,6 @@ void drawTimeScreen() {
   display.print(timeStr);
   display.display();
 }
-
 void drawDateScreen() {
   display.clearDisplay();
   display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
@@ -274,7 +393,6 @@ void drawDateScreen() {
   display.print(dateStr);
   display.display();
 }
-
 void drawBatteryScreen() {
   display.clearDisplay();
   display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
@@ -293,7 +411,6 @@ void drawBatteryScreen() {
   display.print("V: "); display.print(currentBattery.voltage, 1);
   display.display();
 }
-
 // ==== TASKS ====
 void DisplayTask(void *pvParameters) {
   unsigned long lastSlide = 0, lastUpdate = 0;
@@ -322,7 +439,6 @@ void DisplayTask(void *pvParameters) {
     vTaskDelay(updateFreq);
   }
 }
-
 void TimeTask(void *pvParameters) {
   struct tm timeinfo;
   TickType_t lastSync = xTaskGetTickCount();
@@ -341,7 +457,6 @@ void TimeTask(void *pvParameters) {
     vTaskDelay(syncFreq);
   }
 }
-
 void BatteryTask(void *pvParameters) {
   TickType_t lastRead = xTaskGetTickCount();
   const TickType_t readFreq = pdMS_TO_TICKS(30000); // 30s
@@ -354,7 +469,6 @@ void BatteryTask(void *pvParameters) {
     vTaskDelay(readFreq);
   }
 }
-
 void MonitorTask(void *pvParameters) {
   TickType_t lastLog = xTaskGetTickCount();
   const TickType_t logFreq = pdMS_TO_TICKS(10000); // 10s
@@ -376,7 +490,6 @@ void MonitorTask(void *pvParameters) {
     vTaskDelay(pdMS_TO_TICKS(100)); // 100ms poll
   }
 }
-
 void goToSleep() {
   Serial.println("Sleep Mode");
   display.ssd1306_command(SSD1306_DISPLAYOFF);
@@ -385,12 +498,10 @@ void goToSleep() {
   esp_sleep_enable_gpio_wakeup();
   esp_deep_sleep_start();
 }
-
 // ==== SETUP ====
 void setup() {
   Serial.begin(115200);
   delay(100);
-
   // Wake reason
   esp_sleep_wakeup_cause_t reason = esp_sleep_get_wakeup_cause();
   if (reason == ESP_SLEEP_WAKEUP_GPIO) {
@@ -409,40 +520,33 @@ void setup() {
     isAwake = true;
     lastActivity = millis();
   }
-
   if (isAwake) {
     pinMode(TOUCH_PIN, INPUT);
     pinMode(BATTERY_PIN, INPUT);
     analogReadResolution(12); // 12-bit ADC
   }
-
   // WiFi & NTP
   WiFiManager wm;
   if (!wm.autoConnect("PortableClock-Setup")) {
     ESP.restart();
   }
   configTime(7 * 3600, 0, "pool.ntp.org");
-
   // OLED
   Wire.begin(OLED_SDA, OLED_SCL);
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println("OLED failed");
     for(;;);
   }
-
   // Queues
   timeQueue = xQueueCreate(5, sizeof(TimeData));
   batteryQueue = xQueueCreate(5, sizeof(BatteryData));
-
   // Tasks
   xTaskCreate(DisplayTask, "Display", 8192, NULL, 1, &displayTaskHandle);
   xTaskCreate(TimeTask, "Time", 4096, NULL, 2, &timeTaskHandle);
   xTaskCreate(BatteryTask, "Battery", 2048, NULL, 3, &batteryTaskHandle);
   xTaskCreate(MonitorTask, "Monitor", 2048, NULL, 4, &monitorTaskHandle);
-
   eyeAnim.begin();
 }
-
 // ==== LOOP (Idle) ====
 void loop() {
   vTaskDelay(pdMS_TO_TICKS(1000)); // FreeRTOS idle
@@ -456,6 +560,82 @@ void loop() {
 4. **DisplayTask**: Dequeue data → Animate eyes/slides → OLED update → vTaskDelay 50ms.
 5. **MonitorTask**: Poll touch/inactivity → Log memory → Trigger sleep if timeout.
 6. **Sleep/Wake**: goToSleep() → GPIO wake → Validate double-tap → Resume tasks.
+
+---
+
+## 🔄 Alur Kerja Sistem
+
+### 1. Inisialisasi Sistem
+```mermaid
+flowchart TD
+    POWER_ON["ESP32-C3 Power ON<br/>(or Wake from Sleep)"]
+    CHECK_WAKE["Check Wake Reason<br/>(ESP_SLEEP_WAKEUP_GPIO)"]
+    DOUBLE_TAP["Double-Tap Validate<br/>(TTP223 GPIO 1)"]
+    WIFI_SETUP["WiFiManager Captive Portal<br/>(SSID/Password Setup)"]
+    CONNECT_WIFI["Connect to WiFi<br/>(Auto-Reconnect)"]
+    INIT_FREERTOS["xTaskCreate:<br/>Display/Sensor/Weather/Monitor"]
+    INIT_QUEUE["xQueueCreate(10, sizeof(Data))"]
+    INIT_I2C["Initialize I2C Bus<br/>(untuk OLED)"]
+    INIT_DHT["Initialize DHT22<br/>(GPIO 2)"]
+    FETCH_FIRST["First Weather Fetch<br/>(Open-Meteo API)"]
+    SYNC_TIME["NTP Time Sync<br/>(pool.ntp.org)"]
+    CALIB_DHT["Calibrate DHT22<br/>(Read Initial Temp)"]
+    READY["Tasks Start<br/>(vTaskDelay Scheduling)"]
+    POWER_ON --> CHECK_WAKE
+    CHECK_WAKE --> DOUBLE_TAP
+    DOUBLE_TAP --> WIFI_SETUP
+    WIFI_SETUP --> CONNECT_WIFI
+    CONNECT_WIFI --> INIT_FREERTOS
+    INIT_FREERTOS --> INIT_QUEUE
+    INIT_QUEUE --> INIT_I2C
+    INIT_I2C --> INIT_DHT
+    INIT_DHT --> FETCH_FIRST
+    FETCH_FIRST --> SYNC_TIME
+    SYNC_TIME --> CALIB_DHT
+    CALIB_DHT --> READY
+    classDef init fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef sleep fill:#fff8e1,stroke:#f57c00,stroke-width:2px,color:#000
+    class POWER_ON,CHECK_WAKE,DOUBLE_TAP sleep
+    class WIFI_SETUP,CONNECT_WIFI,INIT_FREERTOS,INIT_QUEUE,INIT_I2C,INIT_DHT,FETCH_FIRST,SYNC_TIME,CALIB_DHT,READY init
+```
+
+1. **Inisialisasi Sistem**  
+   Setup hardware (OLED, WiFi, NTP, queues), create FreeRTOS tasks, start scheduler. Persist data via RTC_DATA_ATTR untuk wake-up seamless.
+
+2. **Pembacaan Data (FreeRTOS Tasks)**  
+   - **WeatherTask (15 min, via vTaskDelay)**:  
+     Fetch data cuaca dari Open-Meteo API via HTTPClient, parse JSON (temperature, condition, icon), kirim WeatherData {float temp; String desc;} ke queue. Handle WiFi reconnect jika gagal.  
+   - **SensorTask (2 sec, via vTaskDelay)**:  
+     Baca DHT22 (suhu/kelembapan) via dht.readTemperature() & dht.readHumidity(), kirim SensorData {float temp_room; float humid;} ke queue. Error handling untuk sensor fault.
+
+3. **Animasi Mata Mochi (DisplayTask)**  
+   Update posisi pupil & blink state via eyeAnim.update() (random offset 0-5px, blink prob 5% per frame). Render di slide 1 menggunakan GFX primitives (circles untuk eyes/pupil). Non-blocking dengan vTaskDelay(50ms).
+
+4. **Slide Management (DisplayTask)**  
+   Cycle slides setiap 10s: Slide 1 (Eyes + anim), Slide 2 (Time dari queue), Slide 3 (Weather icons/text dari queue), Slide 4 (Sensor + Battery dari queue). Dequeue data non-blocking; fallback ke last-known jika queue kosong.
+
+5. **Memory Management (MonitorTask)**  
+   ```
+   xTaskCreate(MonitorTask, "Monitor", 2048, NULL, 4, NULL);
+     ├─ Serial.print("Free Heap: " + String(ESP.getFreeHeap()));
+     ├─ Serial.print("Stack Watermark: " + String(uxTaskGetStackHighWaterMark(NULL)));
+     └─ Log setiap 10 sec atau via queue signal
+   ```  
+   Pantau heap/stack usage, trigger warning jika <50KB heap. Queue overflow prevention via xQueueSend with timeout.
+
+6. **Deep Sleep (MonitorTask)**  
+   ```
+   Inactivity >600000ms → goToSleep():
+     ├─ display.ssd1306_command(SSD1306_DISPLAYOFF)
+     ├─ gpio_wakeup_enable(GPIO 1, GPIO_INTR_LOW_LEVEL)
+     ├─ esp_sleep_enable_gpio_wakeup()
+     └─ esp_deep_sleep_start()
+   Wake-up: ESP_SLEEP_WAKEUP_GPIO → Double-tap validate
+   ```  
+   Validate double-tap dengan timer (tap1 <2000ms, release <500ms, tap2). Jika invalid, sleep lagi untuk hindari false wake.
+
+7. **OLED Rendering (DisplayTask)**  
+   Clear buffer, draw border/round rect, render text/icons berdasarkan slide (GFX methods: setTextSize, drawBitmap, print). Display update setiap 50ms untuk smooth animasi, power-off saat sleep.
 
 ---
 
@@ -508,20 +688,18 @@ esp32-portable-digital-clock/
 
 ## 🤝 Kontribusi
 Fork → Branch → Commit → PR. Ide: Tambah alarm task, BLE sync.
-
 ---
 
 ## 👨‍💻 Pengembang
-**Ficram Manifur Farissa**  
-GitHub: [@ficrammanifur](https://github.com/ficrammanifur)  
-Email: ficramm@gmail.com  
-
+**Ficram Manifur Farissa**
+GitHub: [@ficrammanifur](https://github.com/ficrammanifur)
+Email: ficramm@gmail.com
 Acknowledgments: Adafruit, Espressif, xAI Grok.
 
 ---
 
 ## 📄 Lisensi
-MIT License (c) 2025 Ficram Manifur Farissa. Lihat [LICENSE](LICENSE).  
+MIT License (c) 2025 Ficram Manifur Farissa. Lihat [LICENSE](LICENSE).
 
 <div align="center">
     
