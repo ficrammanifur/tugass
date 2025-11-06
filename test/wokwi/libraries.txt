@@ -1,0 +1,10 @@
+# Wokwi Library List
+# See https://docs.wokwi.com/guides/libraries
+
+U8g2
+ArduinoHttpClient
+Bonezegei_DHT22
+EasyNTPClient
+ArduinoJson
+Adafruit GFX Library
+Adafruit SSD1306
