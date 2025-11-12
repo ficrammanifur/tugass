@@ -1,6 +1,8 @@
 #include <WiFi.h>
 #include <WiFiManager.h>
 
+WiFiManager wm;
+
 void setup() {
   Serial.begin(115200);
   delay(500);
@@ -24,7 +26,6 @@ void setup() {
   }
 
   // 2️⃣ Jalankan WiFiManager portal agar bisa setup jaringan router
-  WiFiManager wm;
   wm.setConfigPortalBlocking(false); // supaya tidak ngebekuin program
   wm.autoConnect(ap_ssid, ap_pass);
 
@@ -36,4 +37,16 @@ void setup() {
   } else {
     Serial.println("⚠️ Tidak terkoneksi WiFi utama, tetap dalam mode offline + portal aktif.");
   }
+}
+
+void loop() {
+  // Pastikan WiFiManager portal tetap aktif selama ESP berjalan
+  wm.process();
+
+  // Jika koneksi hilang, tetap aktifkan AP agar user bisa konfigurasi ulang
+  if (WiFi.status() != WL_CONNECTED) {
+    WiFi.softAP("Wifi-setup-winda", "12345678");
+  }
+
+  delay(1000); // jeda 1 detik
 }
