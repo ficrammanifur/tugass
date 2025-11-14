@@ -9,6 +9,7 @@
 <p align="center">
   <em>Jam digital portable berbasis ESP32-C3 dengan tampilan OLED 128x64, animasi mata mochi lucu, sinkronisasi waktu NTP real-time, sensor DHT22 untuk suhu ruangan, FreeRTOS tasks untuk scheduling, monitoring memory, dan deep sleep untuk hemat daya hingga <1mA.</em>
 </p>
+      
 <p align="center">
   <img src="https://img.shields.io/badge/last_commit-today-brightgreen?style=for-the-badge" />
   <img src="https://img.shields.io/badge/language-C++-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" />
@@ -113,10 +114,10 @@ graph TB
     A --> E[BatteryTask<br/>Priority 4, Stack 2048<br/>ADC Read → Queue BatteryData]
     A --> F[MonitorTask<br/>Priority 5, Stack 2048<br/>Memory Monitor & Deep Sleep]
     B -->|Dequeue from Queues| G[OLED Display]
-    C -->|xQueueCreate(5, sizeof(TimeData))| H[Queue: TimeData]
-    D -->|xQueueCreate(5, sizeof(SensorData))| I[Queue: SensorData]
-    E -->|xQueueCreate(5, sizeof(BatteryData))| J[Queue: BatteryData]
-    F -->|ESP.getFreeHeap() & uxTaskGetStackHighWaterMark()| K[Serial Log]
+    C -->|"xQueueCreate(5, sizeof(TimeData))"| H[Queue: TimeData]
+    D -->|"xQueueCreate(5, sizeof(SensorData))"| I[Queue: SensorData]
+    E -->|"xQueueCreate(5, sizeof(BatteryData))"| J[Queue: BatteryData]
+    F -->|"ESP.getFreeHeap() & uxTaskGetStackHighWaterMark()"| K[Serial Log]
     style A fill:#ff9,stroke:#333,stroke-width:2px
     style B fill:#9f9,stroke:#333,stroke-width:2px
     style C fill:#9f9,stroke:#333,stroke-width:2px
@@ -152,12 +153,12 @@ flowchart TD
     B --> D[SensorTask<br/>2 sec interval<br/>DHT22 Read → Queue SensorData]
     B --> E[BatteryTask<br/>30 sec interval<br/>ADC GPIO 0 → Queue BatteryData]
     B --> F[DisplayTask<br/>50 ms interval<br/>Dequeue Data → Animate & Draw Slides]
-    B --> G[MonitorTask<br/>1 sec interval<br/>FreeHeap() & Stack WM<br/>Inactivity >10min → Deep Sleep]
+    B --> G[MonitorTask<br/>1 sec interval<br/>"FreeHeap & Stack WM"<br/>Inactivity >10min → Deep Sleep]
     F -->|I2C| H[OLED Display 128x64<br/>Slide 0: Mochi Eyes + Memory<br/>Slide 1: Time & Date<br/>Slide 2: Room Temp & Humidity<br/>Slide 3: Battery Level]
     C -.->|Queue| F
     D -.->|Queue| F
     E -.->|Queue| F
-    G -.->|Trigger| I[Deep Sleep<br/>esp_deep_sleep_start()]<br/>On-Wake: Resume Tasks
+    G -.->|Trigger| I["Deep Sleep<br/>esp_deep_sleep_start()"<br/>On-Wake: Resume Tasks]
     style A fill:#bbf,stroke:#333,stroke-width:2px
     style B fill:#ff9,stroke:#333,stroke-width:2px
     style H fill:#ff9,stroke:#333,stroke-width:2px
@@ -167,11 +168,6 @@ flowchart TD
 ---
 
 ## ⚙️ Instalasi
-```
-
-Now continuing with the rest...
-```markdown
-
 1. **Clone Repo**: `git clone https://github.com/ficrammanifur/esp32-portable-digital-clock.git`
 2. **Arduino IDE**: Install ESP32 package, libraries (Adafruit SSD1306/GFX, WiFiManager, DHT library).
 3. **Edit Pins**: Sesuaikan GPIO pins jika berbeda dari design.
@@ -221,7 +217,6 @@ esp32-portable-digital-clock/
 ---
 
 ## 🤝 Kontribusi
-
 **Fork → Branch → Commit → PR. Ideas: Tambah alarm task, BLE sync, sensor calibration UI.**
 
 ---
@@ -236,11 +231,9 @@ Acknowledgments: Adafruit, Espressif, Community.
 
 ## 📄 Lisensi
 MIT License (c) 2025 Ficram Manifur Farissa. Lihat [LICENSE](LICENSE).
-
 <div align="center">
-    
-**Portable Digital Clock with FreeRTOS & Cute Animations**  
-**Star if helpful!** 
-
+   
+**Portable Digital Clock with FreeRTOS & Cute Animations**
+**Star if helpful!**
 <p><a href="#top">⬆ Top</a></p>
 </div>
