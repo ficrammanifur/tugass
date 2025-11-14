@@ -16,8 +16,6 @@
   <img src="https://img.shields.io/badge/framework-Arduino-00979D?style=for-the-badge&logo=arduino&logoColor=white" />
   <img src="https://img.shields.io/badge/sensors-DHT22-32CD32?style=for-the-badge&logo=sensors&logoColor=white" />
   <img src="https://img.shields.io/badge/API-MSN_Weather-7B68EE?style=for-the-badge&logo=weather&logoColor=white" />
-  <a href="https://github.com/ficrammanifur/esp32-mini-weather-station/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License: MIT" />
   </a>
 
 </p>
