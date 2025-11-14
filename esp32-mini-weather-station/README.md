@@ -153,12 +153,12 @@ flowchart TD
     B --> D[SensorTask<br/>2 sec interval<br/>DHT22 Read → Queue SensorData]
     B --> E[BatteryTask<br/>30 sec interval<br/>ADC GPIO 0 → Queue BatteryData]
     B --> F[DisplayTask<br/>50 ms interval<br/>Dequeue Data → Animate & Draw Slides]
-    B --> G[MonitorTask<br/>1 sec interval<br/>"FreeHeap & Stack WM"<br/>Inactivity >10min → Deep Sleep]
+    B --> G[MonitorTask<br/>1 sec interval<br/>FreeHeap & Stack WM<br/>Inactivity >10min → Deep Sleep]
     F -->|I2C| H[OLED Display 128x64<br/>Slide 0: Mochi Eyes + Memory<br/>Slide 1: Time & Date<br/>Slide 2: Room Temp & Humidity<br/>Slide 3: Battery Level]
     C -.->|Queue| F
     D -.->|Queue| F
     E -.->|Queue| F
-    G -.->|Trigger| I["Deep Sleep<br/>esp_deep_sleep_start()"<br/>On-Wake: Resume Tasks]
+    G -.->|Trigger| I["Deep Sleep<br/>esp_deep_sleep_start()<br/>On-Wake: Resume Tasks"]
     style A fill:#bbf,stroke:#333,stroke-width:2px
     style B fill:#ff9,stroke:#333,stroke-width:2px
     style H fill:#ff9,stroke:#333,stroke-width:2px
