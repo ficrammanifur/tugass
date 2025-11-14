@@ -134,71 +134,71 @@
 ### Diagram Blok Sistem
 ```
               ┌───────────────────────┐
-              │ MSN Weather API │
-              │ (XML Data) │
+              │ MSN Weather API       │
+              │ (XML Data)            │
               └──────────┬────────────┘
                          │ HTTP (XML)
                          ▼
             ┌──────────────────────────────┐
             │ ESP32-C3 Core (Arduino Loop) │
             │──────────────────────────────│
-            │ - millis() Timing │
-            │ - DHT Read │
-            │ - Weather Fetch │
-            │ - Display Update │
-            │ - Slide Cycle │
+            │ - millis() Timing            │
+            │ - DHT Read                   │
+            │ - Weather Fetch              │
+            │ - Display Update             │
+            │ - Slide Cycle                │
             └──────────┬───────────────────┘
                        │ I2C (OLED)
                        ▼
            ┌────────────────────────────┐
-           │ SSD1306 OLED Display │
+           │ SSD1306 OLED Display       │
            │────────────────────────────│
-           │ 4 Slides: Eyes / Time / │
-           │ Weather / Room Temp │
+           │ 4 Slides: Eyes / Time /    │
+           │ Weather / Room Temp        │
            └────────────────────────────┘
                        │ GPIO 2
                        ▼
               ┌───────────────────────┐
-              │ DHT22 Sensor │
-              │ (Room Temp) │
+              │ DHT22 Sensor          │
+              │ (Room Temp)           │
               └───────────────────────┘
 ```
 
 ### Diagram Alur Data
 ```
 ┌───────────────────────────────────────┐
-│ WiFiManager (Setup) │
-│ - Captive portal for SSID/Password │
+│ WiFiManager (Setup)                   │
+│ - Captive portal for SSID/Password    │
 └────────────────────┬──────────────────┘
                      │ WiFi Connect
                      ▼
 ┌───────────────────────────────────────┐
-│ Main Loop (millis() Non-Blocking) │
+│ Main Loop (millis() Non-Blocking)     │
 │ ┌───────────────────────────────────┐ │
-│ │ Weather Fetch (15min) │ │
-│ │ - HTTP GET → Parse XML │ │
-│ │ - Fallback: Cached/Default │ │
+│ │ Weather Fetch (15min)             │ │
+│ │ - HTTP GET → Parse XML            │ │
+│ │ - Fallback: Cached/Default        │ │
 │ └───────────────────────────────────┘ │
-│ ▼ │
+│ ▼                                     │
 │ ┌───────────────────────────────────┐ │
-│ │ DHT Read (2sec) │ │
-│ │ - dht.readTemperature() │ │
+│ │ DHT Read (2sec)                   │ │
+│ │ - dht.readTemperature()           │ │
 │ └───────────────────────────────────┘ │
-│ ▼ │
+│ ▼                                     │
 │ ┌───────────────────────────────────┐ │
-│ │ Display Update (50ms) │ │
-│ │ - Draw slide based on current │ │
-│ │ - Eye animasi & icons │ │
+│ │ Display Update (50ms)             │ │
+│ │ - Draw slide based on current     │ │
+│ │ - Eye animasi & icons             │ │
 └─────────────────────────────────────┘ │
 └───────────────────────────────────────┘
                      │ I2C
                      ▼
 ┌───────────────────────────────────────┐
-│ OLED Display (128x64) │
-│ - Slide 0: Mochi Eyes + WiFi Status │
-│ - Slide 1: Time & Date │
-│ - Slide 2: Weather + Forecast │
-│ - Slide 3: Room Temp Thermometer │
+│ OLED Display (128x64)                 │
+│ - Slide 0: Mochi Eyes + WiFi Status   │
+│ - Slide 1: Time & Date                │
+│ - Slide 2: Weather + Forecast         │
+│ - Slide 3: Room Temp Thermometer      │
 └───────────────────────────────────────┘
 ```
 
@@ -213,13 +213,13 @@ flowchart TD
     FIRST_FETCH["First Weather Fetch<br/>(MSN API XML)"]
     LOOP{"Main Loop<br/>(millis() Timing)"}
     WEATHER_CHECK{"now - lastWeatherFetch >= 15min?"}
-    WEATHER_FETCH["HTTP GET MSN API<br/>Parse XML with indexOf<br/>(Fallback if Fail)"}
+    WEATHER_FETCH["HTTP GET MSN API<br/>Parse XML with indexOf<br/>Fallback if Fail"]
     DHT_CHECK{"now - lastDHTRead >= 2sec?"}
     DHT_READ["dht.readTemperature()<br/>Update roomTemp"]
     SLIDE_CHECK{"now - lastSlideChange >= 10sec?"}
-    SLIDE_CHANGE["currentSlide = (currentSlide + 1) % 4"]
+    SLIDE_CHANGE["currentSlide = currentSlide + 1 mod 4"]
     DISPLAY_CHECK{"now - lastDisplayUpdate >= 50ms?"}
-    DISPLAY_UPDATE["Switch case drawScreen<br/>(Eyes/Time/Weather/RoomTemp)"]
+    DISPLAY_UPDATE["Switch case drawScreen<br/>Eyes/Time/Weather/RoomTemp"]
     LOOP_BACK["delay(10) → Loop"]
     END([END])
     START --> INIT_WIFI
