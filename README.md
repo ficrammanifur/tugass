@@ -1,5 +1,3 @@
-# ESP32 Mini Weather Station
-
 <h1 align="center">
 🌤️ ESP32 Mini Weather Station<br>
     <sub>OLED Display with Animated Mochi Eyes & DHT22 Sensor</sub>
