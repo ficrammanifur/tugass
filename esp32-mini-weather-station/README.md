@@ -69,52 +69,41 @@
 
 ---
 
-<section class="demo-overview">
-  <h1>📸 Demo Singkat — Stasiun Cuaca Mini (ESP32-C3)</h1>
-  <p class="lead">
-    Stasiun cuaca menampilkan data cuaca Tangerang, waktu lokal, suhu ruangan (DHT22), animasi mata mochi, dan status WiFi. Slide berganti tiap 10 detik. Ada fallback saat WiFi mati.
-  </p>
+## 📸 Demo Singkat — Stasiun Cuaca Mini (ESP32-C3)
 
-  <div style="text-align:center; margin: 20px 0;">
-    <img src="/assets/weather_station_demo.gif" alt="ESP32 Mini Weather Station Demo" style="max-width:100%; width:700px; height:auto;">
-    <p><em>Demo: slide animasi, data real-time, & fallback offline</em></p>
-  </div>
+<p align="center">
+  <em>Stasiun cuaca mini menampilkan data cuaca Tangerang, waktu lokal, suhu ruangan (DHT22), animasi mata mochi, dan status WiFi. Slide berganti otomatis setiap 10 detik dengan fallback jika WiFi mati.</em>
+</p>
 
-  <h2>Slide (rotasi setiap 10 detik)</h2>
-  <ul>
-    <li><strong>Slide 1</strong> — Animasi mata mochi & status WiFi</li>
-    <li><strong>Slide 2</strong> — Waktu & tanggal (rounded border)</li>
-    <li><strong>Slide 3</strong> — Cuaca saat ini (suhu, kondisi, forecast)</li>
-    <li><strong>Slide 4</strong> — Suhu ruangan (DHT22) + ikon termometer</li>
-  </ul>
+---
 
-  <h3>Preview Slide</h3>
-  <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-    <figure style="text-align:center;">
-      <img src="/assets/slide-1.png" alt="Slide 1: Animasi Mata dan Status Online" style="width:128px; height:auto;">
-      <figcaption>Slide 1</figcaption>
-    </figure>
-    <figure style="text-align:center;">
-      <img src="/assets/slide-2.png" alt="Slide 2: Waktu dan Tanggal" style="width:128px; height:auto;">
-      <figcaption>Slide 2</figcaption>
-    </figure>
-    <figure style="text-align:center;">
-      <img src="/assets/slide-3.png" alt="Slide 3: Cuaca Tangerang (H/L)" style="width:128px; height:auto;">
-      <figcaption>Slide 3</figcaption>
-    </figure>
-    <figure style="text-align:center;">
-      <img src="/assets/slide-4.png" alt="Slide 4: Suhu Ruangan" style="width:128px; height:auto;">
-      <figcaption>Slide 4</figcaption>
-    </figure>
-  </div>
+<p align="center">
+  <img src="/assets/weather_station_demo.gif?height=400&width=700" alt="ESP32 Mini Weather Station Demo" width="700"/><br/>
+  <em>Demo: slide animasi, data real-time & fallback offline</em>
+</p>
 
-  <h4>Catatan</h4>
-  <ol>
-    <li>Pastikan path `/assets/*` benar dan file di-compress bila perlu.</li>
-    <li>Sisipkan `aria-label` atau `alt` deskriptif untuk aksesibilitas.</li>
-    <li>Atur slide interval di JS (contoh: `setInterval(nextSlide, 10000)`).</li>
-  </ol>
-</section>
+---
+
+### <p align="center">🔄 Slide (Rotasi Tiap 10 Detik)</p>
+
+<p align="center">
+  <strong>Slide 1:</strong> Animasi mata mochi + status WiFi<br/>
+  <strong>Slide 2:</strong> Waktu & tanggal (rounded border)<br/>
+  <strong>Slide 3:</strong> Cuaca Tangerang (suhu, kondisi, forecast)<br/>
+  <strong>Slide 4:</strong> Suhu ruangan dari DHT22 + ikon termometer
+</p>
+
+---
+
+### <p align="center">🖼️ Preview Slide</p>
+
+<p align="center">
+  <img src="/assets/slide-1.png?height=100&width=128" width="128" alt="Slide 1"/>&nbsp;&nbsp;
+  <img src="/assets/slide-2.png?height=100&width=128" width="128" alt="Slide 2"/>&nbsp;&nbsp;
+  <img src="/assets/slide-3.png?height=100&width=128" width="128" alt="Slide 3"/>&nbsp;&nbsp;
+  <img src="/assets/slide-4.png?height=100&width=128" width="128" alt="Slide 4"/><br/>
+  <em>Screenshot masing-masing slide</em>
+</p>
 
 ---
 
