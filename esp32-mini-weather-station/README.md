@@ -6,11 +6,9 @@
 <p align="center">
   <img src="/assets/mini_weather_station_banner.png?height=400&width=700" alt="ESP32 Mini Weather Station" width="700"/>
 </p>
-
 <p align="center">
   <em>Stasiun cuaca mini berbasis ESP32-C3 dengan tampilan OLED 128x64, animasi mata mochi lucu, data cuaca real-time dari MSN Weather API, sensor DHT22 untuk suhu ruangan, pembacaan sensor non-blocking via millis(), monitoring sederhana, dan konsumsi daya rendah.</em>
 </p>
-
 <p align="center">
   <img src="https://img.shields.io/badge/last_commit-today-brightgreen?style=for-the-badge" />
   <img src="https://img.shields.io/badge/language-C++-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" />
@@ -21,6 +19,7 @@
   <a href="https://github.com/ficrammanifur/esp32-mini-weather-station/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License: MIT" />
   </a>
+
 </p>
 
 ---
@@ -71,8 +70,7 @@
 ---
 
 ## 📸 Demo Singkat
-> Stasiun cuaca mini ESP32-C3 menampilkan data cuaca Tangerang, waktu lokal, suhu ruangan dari DHT22, animasi mata mochi, dan status WiFi. Slide berganti setiap 10 detik. Fallback data jika WiFi down.
-
+> Stasiun cuaca mini ESP32-C3 menampilkan data cuaca Tangerang, waktu lokal, suhu ruangan dari DHT22, animasi mata mochi, dan status WiFi. Slide berganti setiap 10 detik. Fallback data jika WiFi down.  
 > - **Slide 1:** Animasi mata mochi dengan status WiFi  
 > - **Slide 2:** Waktu & tanggal dengan border rounded  
 > - **Slide 3:** Cuaca saat ini (suhu, kondisi, forecast besok)  
@@ -81,6 +79,15 @@
 <p align="center">
   <img src="/assets/weather_station_demo.gif?height=400&width=700" alt="ESP32 Mini Weather Station Demo" width="700"/><br/>
   <em>Demo Slide Animasi, Data Real-Time, & Fallback Offline</em>
+</p>
+
+### Slide Previews
+<p align="center">
+  <img src="/assets/slide-1.png?height=100&width=128" alt="Slide 1: Animasi Mata dan Status Online" title="Slide 1: Animasi Mata dan Status Online"/><br/>
+  <img src="/assets/slide-2.png?height=100&width=128" alt="Slide 2: Waktu dan Tanggal" title="Slide 2: Waktu dan Tanggal"/><br/>
+  <img src="/assets/slide-3.png?height=100&width=128" alt="Slide 3: Cuaca di Tangerang Suhu Luar H dan L" title="Slide 3: Cuaca di Tangerang Suhu Luar H dan L"/><br/>
+  <img src="/assets/slide-4.png?height=100&width=128" alt="Slide 4: Suhu Ruangan" title="Slide 4: Suhu Ruangan"/><br/>
+  <em>Screenshot dari Masing-Masing Slide</em>
 </p>
 
 ---
@@ -94,7 +101,6 @@
 | **WiFi Antenna** | Koneksi internet | Fetch data cuaca dari MSN Weather API via HTTPClient |
 | **Resistor Pull-up** | Stabilisasi I2C | Untuk OLED & DHT22 (4.7kΩ opsional) |
 | **Power Supply 3.3V** | Sumber daya | Dari ESP32-C3 atau external 5V step-down; konsumsi ~50mA active |
-
 <p align="center">
   <img src="/assets/portable_clock_wiring.png?height=400&width=700" alt="ESP32 Weather Station Wiring Diagram" width="700"/><br/>
   <em> Wiring Diagram ESP32-C3 Mini Weather Station</em><br/>
@@ -108,6 +114,7 @@
 ---
 
 ## 💻 Software & Library
+
 ### Pada ESP32 (Firmware Arduino)
 | Library | Fungsi |
 |---------|--------|
@@ -129,6 +136,7 @@
 ---
 
 ## 🏗️ Arsitektur Sistem
+
 ### Diagram Blok Sistem
 ```
               ┌───────────────────────┐
@@ -361,6 +369,7 @@ cd esp32-mini-weather-station
 ```
 
 ### 2. Setup Arduino IDE
+
 #### Install ESP32 Board Package
 1. Buka Arduino IDE
 2. File → Preferences
@@ -402,7 +411,6 @@ const unsigned long dhtInterval = 2000UL; // 2 sec
 4. Sketch → Upload
 5. Monitor Serial (Baud: 115200) untuk melihat log fetch & parse
 ```
-
 Expected Output:
 ```
 Configuring WiFi...
@@ -414,6 +422,7 @@ MSN Data fetched: 28°C, Berawan
 ```
 
 ### 5. Hardware Assembly
+
 #### Wiring Checklist
 - [ ] OLED: SDA → GPIO 8, SCL → GPIO 9, VCC → 3.3V, GND → GND
 - [ ] DHT22: Data → GPIO 2, VCC → 3.3V, GND → GND
@@ -558,7 +567,6 @@ if (httpResponseCode != 200) { suhu = "28"; }
 **Nilai Tambah:** Belajar millis() non-blocking, string parsing, I2C, pixel animasi.
 
 ---
-
 ## 📊 Hasil Pengujian
 | Parameter | Nilai | Status |
 |-----------|-------|--------|
@@ -659,6 +667,10 @@ esp32-mini-weather-station/
 ├── assets/ # Gambar & diagram
 │ ├── mini_weather_station_banner.png
 │ ├── weather_station_demo.gif
+│ ├── slide-1.png # Animasi mata dan status online
+│ ├── slide-2.png # Waktu dan tanggal
+│ ├── slide-3.png # Cuaca di Tangerang suhu luar H dan L
+│ ├── slide-4.png # Suhu ruangan
 │ └── schematic.png
 ├── test/ # Modul pengujian
 │ ├── oled_test.ino # Test display
@@ -676,30 +688,29 @@ esp32-mini-weather-station/
 ---
 
 ## 🤝 Kontribusi
-Kontribusi sangat diterima! Mari kembangkan stasiun cuaca mini ini bersama.
+Kontribusi sangat diterima! Mari kembangkan stasiun cuaca mini ini bersama.  
 
 ### Cara Berkontribusi
-1. **Fork** repository ini
-2. **Create** feature branch (`git checkout -b feature/NewFeature`)
-3. **Commit** changes (`git commit -m 'Add NewFeature'`)
-4. **Push** to branch (`git push origin feature/NewFeature`)
-5. **Open** Pull Request
+1. **Fork** repository ini  
+2. **Create** feature branch (`git checkout -b feature/NewFeature`)  
+3. **Commit** changes (`git commit -m 'Add NewFeature'`)  
+4. **Push** to branch (`git push origin feature/NewFeature`)  
+5. **Open** Pull Request  
 
 ### Area Pengembangan
-- [ ] Tambah kelembaban DHT22 ke slide
-- [ ] Ganti MSN ke Open-Meteo (JSON parsing)
-- [ ] Tambah deep sleep & touch wake-up
-- [ ] Custom animasi mata berdasarkan cuaca
-- [ ] Battery monitor untuk portable mode
-- [ ] Multi-kota support via WiFiManager param
-- [x] Non-blocking loop dengan millis()
-- [ ] Unit testing untuk XML parse
-- [ ] Tambah FreeRTOS tasks (advanced)
+- [ ] Tambah kelembaban DHT22 ke slide  
+- [ ] Ganti MSN ke Open-Meteo (JSON parsing)  
+- [ ] Tambah deep sleep & touch wake-up  
+- [ ] Custom animasi mata berdasarkan cuaca  
+- [ ] Battery monitor untuk portable mode  
+- [ ] Multi-kota support via WiFiManager param  
+- [x] Non-blocking loop dengan millis()  
+- [ ] Unit testing untuk XML parse  
+- [ ] Tambah FreeRTOS tasks (advanced)  
 
 ---
-
 <div align="center">
-   
+  
 **Compact IoT Weather Monitoring with Arduino Loop & Simple Parsing**  
 **Powered by ESP32-C3, Arduino, and Open Source**  
 **Star this repo if you find it helpful!**  
