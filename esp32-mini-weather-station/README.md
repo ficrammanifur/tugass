@@ -59,27 +59,18 @@ Project ini dirancang sebagai jam digital portable yang kompak, battery-powered,
 | **3D-Printed Case** | Enclosure | PLA/ABS, 5x5x1.5cm | Slot untuk OLED, USB charging |
 
 #### Diagram Blok Hardware
-```
-┌─────────────────────┐
-│ LiPo 3.7V Battery   │
-│ + TP4056 Charger    │
-└─────────┬───────────┘
-          │ 3.3V Regulated
-          ▼
-┌─────────────────────┐    ┌─────────────────────┐
-│ ESP32-C3 DevKit     │─── │ SSD1306 OLED        │
-│ - GPIO 8: SDA │ I2C │    │  - Display Slides   │ 
-│ - GPIO 9: SCL │     │    │  - Low Power Off    │
-│ - GPIO 2: DHT22     │    └─────────────────────┘
-│ - GPIO 0: ADC Batt  │
-│ - Deep Sleep        │
-└─────────┬───────────┘
-          │ GPIO 2
-          ▼
-┌─────────────────────┐
-│ DHT22 Sensor        │
-│ - Suhu/Kelembapan   │
-└─────────────────────┘
+```mermaid
+graph TD
+    A[LiPo 3.7V Battery + TP4056 Charger] -->|3.3V Regulated| B[ESP32-C3 DevKit]
+    B -->|I2C: GPIO 8 SDA, GPIO 9 SCL| C[SSD1306 OLED 128x64]
+    B -->|GPIO 2| D[DHT22 Sensor - Suhu/Kelembapan]
+    B -->|GPIO 0: ADC| E[Resistor Divider - Battery Sensing]
+    C -->|Display Slides & Low Power Off| F[User Interface]
+    D -->|1-wire Protocol| G[Sensor Data]
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#ff9,stroke:#333,stroke-width:2px
+    style D fill:#9f9,stroke:#333,stroke-width:2px
 ```
 
 #### Wiring Diagram
@@ -113,24 +104,25 @@ Project ini dirancang sebagai jam digital portable yang kompak, battery-powered,
 - **Queue**: xQueue untuk share time/battery/sensor data antar tasks.
 - **Fallback**: Jika NTP gagal, gunakan RTC internal (RTC_DATA_ATTR).
 
-#### Arsitektur Software
-```
-FreeRTOS Scheduler
-├── DisplayTask (Priority 1, Stack 8192)
-│ └── Mengatur update OLED: animasi Mochi, waktu, tanggal, suhu
-│
-├── TimeTask (Priority 2, Stack 4096)
-│ └── Sinkronisasi waktu via NTP → kirim ke Queue (TimeData)
-│
-├── SensorTask (Priority 3, Stack 2048)
-│ └── Baca DHT22 → kirim ke Queue (SensorData)
-│
-├── BatteryTask (Priority 4, Stack 2048)
-│ └── Baca ADC GPIO 0 → kirim ke Queue (BatteryData)
-│
-└── MonitorTask (Priority 5, Stack 2048)
-    └── Pantau memory, log heap, dan aktifkan deep sleep
-Queue: TimeData, SensorData & BatteryData (size 5)
+#### Arsitektur Software - FreeRTOS Architecture
+```mermaid
+graph TB
+    A[FreeRTOS Scheduler] --> B[DisplayTask<br/>Priority 1, Stack 8192<br/>Update OLED: Animasi, Slides]
+    A --> C[TimeTask<br/>Priority 2, Stack 4096<br/>NTP Sync → Queue TimeData]
+    A --> D[SensorTask<br/>Priority 3, Stack 2048<br/>DHT22 Read → Queue SensorData]
+    A --> E[BatteryTask<br/>Priority 4, Stack 2048<br/>ADC Read → Queue BatteryData]
+    A --> F[MonitorTask<br/>Priority 5, Stack 2048<br/>Memory Monitor & Deep Sleep]
+    B -->|Dequeue from Queues| G[OLED Display]
+    C -->|xQueueCreate(5, sizeof(TimeData))| H[Queue: TimeData]
+    D -->|xQueueCreate(5, sizeof(SensorData))| I[Queue: SensorData]
+    E -->|xQueueCreate(5, sizeof(BatteryData))| J[Queue: BatteryData]
+    F -->|ESP.getFreeHeap() & uxTaskGetStackHighWaterMark()| K[Serial Log]
+    style A fill:#ff9,stroke:#333,stroke-width:2px
+    style B fill:#9f9,stroke:#333,stroke-width:2px
+    style C fill:#9f9,stroke:#333,stroke-width:2px
+    style D fill:#9f9,stroke:#333,stroke-width:2px
+    style E fill:#9f9,stroke:#333,stroke-width:2px
+    style F fill:#f99,stroke:#333,stroke-width:2px
 ```
 
 ---
@@ -152,59 +144,34 @@ Program menggunakan FreeRTOS untuk multitasking efisien, menghindari blocking de
 
 ### 🏗️ Arsitektur Sistem
 
-#### Diagram Alur Data
-```
-┌───────────────────────────────────────┐
-│ WiFiManager (Setup)                   │
-│ - Captive portal for SSID/Password    │
-└────────────────────┬──────────────────┘
-                     │ WiFi Connect
-                     ▼
-┌───────────────────────────────────────┐
-│ FreeRTOS Tasks (xTaskCreate)          │
-│ ┌───────────────────────────────────┐ │
-│ │ TimeTask (1 hour)                 │ │
-│ │ - Fetch NTP → Queue               │ │
-│ │ - Fallback: RTC internal          │ │
-│ └───────────────────────────────────┘ │
-│ ▼                                     │
-│ ┌───────────────────────────────────┐ │
-│ │ SensorTask (2sec)                 │ │
-│ │ - DHT22 read → Queue              │ │
-│ └───────────────────────────────────┘ │
-│ ▼                                     │
-│ ┌───────────────────────────────────┐ │
-│ │ BatteryTask (30sec)               │ │
-│ │ - ADC read → Queue                │ │
-│ └───────────────────────────────────┘ │
-│ ▼                                     │
-│ ┌───────────────────────────────────┐ │
-│ │ DisplayTask (50ms)                │ │
-│ │ - Dequeue data                    │ │
-│ │ - Animate & draw slides           │ │
-└─────────────────────────────────────┘ │
-│ ▼                                     │
-│ ┌───────────────────────────────────┐ │
-│ │ MonitorTask (1sec)                │ │
-│ │ - ESP.getFreeHeap()               │ │
-│ │ - uxTaskGetStackHighWaterMark()   │ │
-│ │ - Inactivity >10min → Deep Sleep  │ │
-└─────────────────────────────────────┘ │
-└───────────────────────────────────────┘
-                     │ I2C
-                     ▼
-┌───────────────────────────────────────┐
-│ OLED Display (128x64)                 │
-│ - Slide 0: Mochi Eyes + Memory        │
-│ - Slide 1: Time & Date                │
-│ - Slide 2: Room Temp & Humidity       │
-│ - Slide 3: Battery Level              │
-└───────────────────────────────────────┘
+#### Diagram Alur Data (Data Flow Diagram)
+```mermaid
+flowchart TD
+    A[WiFiManager Setup<br/>Captive Portal SSID/Password] -->|WiFi Connect| B[FreeRTOS Tasks<br/>xTaskCreate]
+    B --> C[TimeTask<br/>1 hour interval<br/>Fetch NTP → Queue TimeData<br/>Fallback: RTC internal]
+    B --> D[SensorTask<br/>2 sec interval<br/>DHT22 Read → Queue SensorData]
+    B --> E[BatteryTask<br/>30 sec interval<br/>ADC GPIO 0 → Queue BatteryData]
+    B --> F[DisplayTask<br/>50 ms interval<br/>Dequeue Data → Animate & Draw Slides]
+    B --> G[MonitorTask<br/>1 sec interval<br/>FreeHeap() & Stack WM<br/>Inactivity >10min → Deep Sleep]
+    F -->|I2C| H[OLED Display 128x64<br/>Slide 0: Mochi Eyes + Memory<br/>Slide 1: Time & Date<br/>Slide 2: Room Temp & Humidity<br/>Slide 3: Battery Level]
+    C -.->|Queue| F
+    D -.->|Queue| F
+    E -.->|Queue| F
+    G -.->|Trigger| I[Deep Sleep<br/>esp_deep_sleep_start()]<br/>On-Wake: Resume Tasks
+    style A fill:#bbf,stroke:#333,stroke-width:2px
+    style B fill:#ff9,stroke:#333,stroke-width:2px
+    style H fill:#ff9,stroke:#333,stroke-width:2px
+    style I fill:#f99,stroke:#333,stroke-width:2px
 ```
 
 ---
 
 ## ⚙️ Instalasi
+```
+
+Now continuing with the rest...
+```markdown
+
 1. **Clone Repo**: `git clone https://github.com/ficrammanifur/esp32-portable-digital-clock.git`
 2. **Arduino IDE**: Install ESP32 package, libraries (Adafruit SSD1306/GFX, WiFiManager, DHT library).
 3. **Edit Pins**: Sesuaikan GPIO pins jika berbeda dari design.
