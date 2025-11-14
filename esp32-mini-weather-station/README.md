@@ -115,7 +115,7 @@
 | **Resistor Pull-up** | Stabilisasi I2C | Untuk OLED & DHT22 (4.7kΩ opsional) |
 | **Power Supply 3.3V** | Sumber daya | Dari ESP32-C3 atau external 5V step-down; konsumsi ~50mA active |
 <p align="center">
-  <img src="/assets/portable_clock_wiring.png?height=400&width=700" alt="ESP32 Weather Station Wiring Diagram" width="700"/><br/>
+  <img src="/assets/Schematic-Weather-Station.png?height=400&width=700" alt="ESP32 Weather Station Wiring Diagram" width="700"/><br/>
   <em> Wiring Diagram ESP32-C3 Mini Weather Station</em><br/>
   ⚙️ <strong>Notes:</strong><br/>
   🔹 OLED terhubung via I2C: SDA (GPIO 8) & SCL (GPIO 9).  
